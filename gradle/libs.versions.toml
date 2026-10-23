@@ -17,6 +17,7 @@ accompanist-pager = "0.28.0"
 accompanist-systemuicontroller = "0.28.0"
 ksp = "2.0.21-1.0.25"
 compose-destinations = "1.11.6"
+navigation-compose = "2.8.9"
 serialization-json = "1.6.3"
 documentFile = "1.0.1"
 workRuntimeKtx = "2.10.0"
@@ -56,6 +57,7 @@ foundation-android = { group = "androidx.compose.foundation", name = "foundation
 graphics-shape = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShape" }
 compose-destinations = { group = "io.github.raamcosta.compose-destinations", name = "animations-core", version.ref = "compose-destinations" }
 compose-destinations-ksp = { group = "io.github.raamcosta.compose-destinations", name = "ksp", version.ref = "compose-destinations" }
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
 accompanist-pager-indicators = { group = "com.google.accompanist", name = "accompanist-pager-indicators", version.ref = "accompanist-pager" }
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist-systemuicontroller" }
 

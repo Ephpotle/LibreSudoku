@@ -113,6 +113,7 @@ dependencies {
 
     implementation(libs.compose.destinations)
     ksp(libs.compose.destinations.ksp)
+    implementation(libs.navigation.compose)
 
     implementation(libs.serialization.json)
     implementation(libs.documentFile)
