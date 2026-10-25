@@ -45,7 +45,10 @@ enum class Technique(val tier: LogicTier) {
     COLOR_WRAP(LogicTier.ADVANCED), COLOR_TRAP(LogicTier.ADVANCED),
     X_CHAIN(LogicTier.CHAINS), XY_CHAIN(LogicTier.CHAINS), AIC(LogicTier.CHAINS),
     ALS_XZ(LogicTier.CHAINS),
-    FULL_HOUSE(LogicTier.NAKED_SINGLES)
+    FULL_HOUSE(LogicTier.NAKED_SINGLES),
+    // Killer cage techniques. Appended so persisted names and the classic fixture slice stay stable.
+    CAGE_COMBINATION(LogicTier.BASIC), INNIE_OUTIE(LogicTier.BASIC), CAGE_UNIT_LOCK(LogicTier.BASIC),
+    MULTI_UNIT_INNIE_OUTIE(LogicTier.ADVANCED)
 }
 
 enum class LogicStatus { SOLVED, STALLED, CONTRADICTION }

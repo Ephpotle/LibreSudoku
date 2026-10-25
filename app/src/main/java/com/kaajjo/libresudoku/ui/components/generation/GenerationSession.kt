@@ -33,7 +33,7 @@ sealed interface GenerationState {
 /**
  * Owns a generation request across dialog recompositions. Call actions on the scope's dispatcher
  * (the main thread in ViewModels). Only fully rated puzzles matching the request can be saved;
- * Killer ratings describe the classical base, as recorded in the metadata version.
+ * Killer ratings come from the Killer rater, as recorded in the metadata version.
  * Generation retries automatically until cancelled. Save retries keep the same puzzle and batch prefix.
  *
  * @param scope Owner scope and dispatcher for state changes; cancelling it stops the session.

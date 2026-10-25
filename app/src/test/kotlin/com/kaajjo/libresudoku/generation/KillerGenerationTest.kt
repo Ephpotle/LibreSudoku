@@ -30,10 +30,10 @@ import kotlin.random.Random
 
 class KillerGenerationTest {
     @Test
-    fun everyKillerSize_ReachesSaveWithUniqueGivensAndValidSerializableCages() = generationTest {
+    fun classicFormatKiller_ReachesSaveWithUniqueGivensAndValidSerializableCages() = generationTest {
         for ((killer, classic) in variants) {
             val expected = controller(123).generate(classic, GameDifficulty.Easy)
-            val generator = GamePuzzleGenerator(controller(123))
+            val generator = GamePuzzleGenerator(controller(123), classicKiller = true)
             val saved = mutableListOf<QQWingResult>()
             val errors = mutableListOf<Exception>()
             val session = GenerationSession(this, generate = generator::generate,
@@ -90,12 +90,12 @@ class KillerGenerationTest {
     }
 
     @Test
-    fun killerRouting_PreservesAllFourRequestedDifficultyLabels() = generationTest {
+    fun classicFormatKiller_PreservesAllFourRequestedDifficultyLabels() = generationTest {
         val categories = listOf(GameDifficulty.Easy, GameDifficulty.Moderate,
             GameDifficulty.Hard, GameDifficulty.Challenge)
         for ((index, category) in categories.withIndex()) {
             val seed = 601509000L + index * 1000003L
-            val result = GamePuzzleGenerator(controller(seed))
+            val result = GamePuzzleGenerator(controller(seed), classicKiller = true)
                 .generate(GameType.Killer6x6, category)
             assertEquals(category, result.difficulty)
             assertEquals(true, result.ratingMetadata?.logicallySolved)
@@ -119,12 +119,12 @@ class KillerGenerationTest {
     }
 
     @Test
-    fun killerSearchExhaustion_RetriesWithoutSavingAnotherDifficulty() = generationTest {
+    fun classicFormatKillerSearchExhaustion_RetriesWithoutSavingAnotherDifficulty() = generationTest {
         val profile = GenerationProfile(GameDifficulty.entries.associateWith { 1..1 })
         val generator = GamePuzzleGenerator(QQWingControllerV2(
             random = Random(4), maxGenerationAttempts = 1,
             maxGenerationMillis = 60_000, profileFor = { profile }
-        ))
+        ), classicKiller = true)
         val saved = mutableListOf<QQWingResult>()
         val errors = mutableListOf<Exception>()
         val retried = CompletableDeferred<Unit>()
