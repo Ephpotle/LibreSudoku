@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         // Own ID so this fork can be published on Google Play next to the original app.
-        applicationId = "com.ephpotle.killersudoku"
+        applicationId = "se.undersphere.killersudoku"
         minSdk = 26
         targetSdk = 35
         // CI passes a growing number; Google Play rejects a version code it has seen before.

@@ -1,7 +1,7 @@
 # Publishing to Google Play
 
 Every push to `main` builds a signed app bundle and uploads it to the **internal testing** track of Google Play,
-so phones that installed the app from Play update themselves. The app ID is `com.ephpotle.killersudoku`.
+so phones that installed the app from Play update themselves. The app ID is `se.undersphere.killersudoku`.
 
 ## One-time setup
 
