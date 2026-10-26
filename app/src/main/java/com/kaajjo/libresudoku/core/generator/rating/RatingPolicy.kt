@@ -87,6 +87,10 @@ object RatingPolicy {
         Technique.X_CHAIN, Technique.XY_CHAIN -> 260
         Technique.AIC -> 280
         Technique.ALS_XZ -> 300
+        Technique.CAGE_COMBINATION -> 20
+        Technique.INNIE_OUTIE -> 45
+        Technique.CAGE_UNIT_LOCK -> 60
+        Technique.MULTI_UNIT_INNIE_OUTIE -> 110
     }
 
     /**

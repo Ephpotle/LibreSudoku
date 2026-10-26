@@ -1,6 +1,7 @@
 package com.kaajjo.libresudoku.ui.components.board
 
 import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -148,10 +151,26 @@ fun Board(
             }
         }
         val noteSizePx = with(LocalDensity.current) { (cellSizeDivWidth * 0.8f).toSp().toPx() }
-        val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.1f }
+        val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.2f }
 
+        val isKiller = cages.isNotEmpty()
         val thinLineWidth = with(LocalDensity.current) { 1.3.dp.toPx() }
-        val thickLineWidth = with(LocalDensity.current) { 1.3.dp.toPx() }
+        // killer boards need box borders that clearly differ from the cage outlines
+        val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 2.4.dp else 1.3.dp).toPx() }
+        val cageLineWidth = with(LocalDensity.current) { 1.6.dp.toPx() }
+        val cageLineColor = foregroundColor.copy(alpha = 0.9f)
+
+        val colorScheme = MaterialTheme.colorScheme
+        val cageTintAlpha = if (colorScheme.surface.luminance() < 0.5f) 0.16f else 0.10f
+        val cageTints = remember(colorScheme, cageTintAlpha) {
+            listOf(
+                colorScheme.primary.copy(alpha = cageTintAlpha),
+                colorScheme.tertiary.copy(alpha = cageTintAlpha),
+                colorScheme.onSurfaceVariant.copy(alpha = cageTintAlpha * 0.8f),
+                Color.Transparent
+            )
+        }
+        val cageTintIndex = remember(cages) { cageTintIndices(cages, cageTints.size) }
 
         val killerSumBounds by remember { mutableStateOf(android.graphics.Rect()) }
 
@@ -210,9 +229,10 @@ fun Board(
         var killerSumPaint by remember {
             mutableStateOf(
                 Paint().apply {
-                    color = notesColor.toArgb()
+                    color = foregroundColor.toArgb()
                     isAntiAlias = true
                     textSize = killerSumSizePx
+                    typeface = Typeface.DEFAULT_BOLD
                 }
             )
         }
@@ -240,9 +260,10 @@ fun Board(
                 textSize = fontSizePx
             }
             killerSumPaint = Paint().apply {
-                color = notesColor.toArgb()
+                color = foregroundColor.toArgb()
                 isAntiAlias = true
                 textSize = killerSumSizePx
+                typeface = Typeface.DEFAULT_BOLD
             }
         }
 
@@ -313,6 +334,15 @@ fun Board(
             modifier = if (zoomable) boardModifier.then(zoomModifier) else boardModifier
         ) {
             val cornerRadius = CornerRadius(15f, 15f)
+
+            // cage tints go first so selection and highlights stay visible on top of them
+            cages.forEachIndexed { index, cage ->
+                drawKillerCageTint(
+                    cage = cage,
+                    cellSize = cellSize,
+                    color = cageTints[cageTintIndex[index]]
+                )
+            }
 
             if (selectedCell.row >= 0 && selectedCell.col >= 0) {
                 // current cell
@@ -447,29 +477,36 @@ fun Board(
             }
 
             if (cages.isNotEmpty()) {
+                val labelPadding = cellSize * 0.06f
                 cages.forEach { cage ->
                     val textToDraw = if (questions) "?" else cage.sum.toString()
                     killerSumPaint.getTextBounds(textToDraw, 0, textToDraw.length, killerSumBounds)
-                    val cellWithSum = cage.cells.first()
+                    val cellWithSum = cage.labelCell()
+                    val labelRect = Rect(
+                        offset = Offset(
+                            x = cellWithSum.col * cellSize + labelPadding,
+                            y = cellWithSum.row * cellSize + labelPadding
+                        ),
+                        size = Size(
+                            killerSumPaint.measureText(textToDraw),
+                            killerSumBounds.height().toFloat()
+                        )
+                    )
                     drawIntoCanvas { canvas ->
                         canvas.nativeCanvas.drawText(
                             textToDraw,
-                            cellWithSum.col * cellSize + (cellSize * 0.05f),
-                            cellWithSum.row * cellSize + killerSumBounds.height() + (cellSize * 0.05f),
+                            labelRect.left,
+                            labelRect.bottom,
                             killerSumPaint
                         )
                     }
 
                     drawKillerCage(
                         cage = cage,
-                        cellWithSum = cellWithSum,
                         cellSize = cellSize,
-                        strokeWidth = thickLineWidth,
-                        color = thinLineColor,
-                        cornerTextPadding = Offset(
-                            killerSumBounds.width().toFloat(),
-                            killerSumBounds.height().toFloat()
-                        )
+                        strokeWidth = cageLineWidth,
+                        color = cageLineColor,
+                        labelRect = labelRect
                     )
                 }
             }

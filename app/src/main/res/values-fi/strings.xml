@@ -87,6 +87,8 @@
     <string name="game_over_mistakes">Teit kolme virhettä</string>
     <string name="dialog_generating">Luodaan…</string>
     <string name="games_completed">Valmiita pelejä</string>
+    <string name="games_finished">Päättyneitä pelejä</string>
+    <string name="games_won">Voitettuja pelejä</string>
     <string name="win_rate">Voittosuhde</string>
     <string name="games_started">Pelejä aloitettu</string>
     <string name="win_streak">Voittoputki</string>

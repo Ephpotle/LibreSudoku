@@ -10,13 +10,15 @@ plugins {
 
 android {
     namespace = "com.kaajjo.libresudoku"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.kaajjo.libresudoku"
+        // Own ID so this fork can be published on Google Play next to the original app.
+        applicationId = "se.undersphere.killersudoku"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 22
+        targetSdk = 36
+        // CI passes a growing number; Google Play rejects a version code it has seen before.
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 22
         versionName = "2.0.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -35,8 +37,20 @@ android {
         includeInBundle = false
     }
 
+    // Set by the Play publishing workflow from repository secrets; local release builds stay unsigned.
+    val releaseKeystore = System.getenv("RELEASE_KEYSTORE_PATH")
+    signingConfigs {
+        if (releaseKeystore != null) create("release") {
+            storeFile = file(releaseKeystore)
+            storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
