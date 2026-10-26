@@ -10,13 +10,13 @@ plugins {
 
 android {
     namespace = "com.kaajjo.libresudoku"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Own ID so this fork can be published on Google Play next to the original app.
         applicationId = "se.undersphere.killersudoku"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // CI passes a growing number; Google Play rejects a version code it has seen before.
         versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 22
         versionName = "2.0.2"
