@@ -115,6 +115,8 @@
     <string name="statistics">Statistics</string>
     <string name="games_started">Games started</string>
     <string name="games_completed">Games completed</string>
+    <string name="games_finished">Games finished</string>
+    <string name="games_won">Games won</string>
     <string name="win_rate">Win rate</string>
     <string name="win_streak">Win streak</string>
     <string name="current_streak">Current streak</string>

@@ -9,6 +9,7 @@ import com.kaajjo.libresudoku.core.qqwing.GameDifficulty
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.data.database.model.Record
 import com.kaajjo.libresudoku.data.database.model.SavedGame
+import com.kaajjo.libresudoku.data.database.model.SudokuBoard
 import com.kaajjo.libresudoku.data.datastore.AppSettingsManager
 import com.kaajjo.libresudoku.data.datastore.TipCardsDataStore
 import com.kaajjo.libresudoku.domain.repository.RecordRepository
@@ -36,6 +37,7 @@ class StatisticsViewModel
 
     var recordList: Flow<List<Record>> = recordRepository.getAllSortByTime()
     val savedGamesList: Flow<List<SavedGame>> = savedGameRepository.getAll()
+    val savedGamesWithBoards: Flow<Map<SavedGame, SudokuBoard>> = savedGameRepository.getWithBoards()
 
     val dateFormat = appSettingsManager.dateFormat
 
@@ -111,6 +113,18 @@ class StatisticsViewModel
             }
         }
         return maxStreak
+    }
+
+    /**
+     * Win rate of finished games of the selected type and difficulty, or null while either is unselected.
+     *
+     * @param games Saved games with the boards they were played on.
+     */
+    fun getSelectionWinRate(games: Map<SavedGame, SudokuBoard>): WinRate? {
+        if (selectedType == GameType.Unspecified || selectedDifficulty == GameDifficulty.Unspecified) return null
+        return WinRate.of(games
+            .filter { (_, board) -> board.type == selectedType && board.difficulty == selectedDifficulty }
+            .keys.map { WinRate.outcome(it.completed, it.giveUp, it.canContinue) })
     }
 
     fun getWinRate(savedGames: List<SavedGame>): Float {

@@ -104,6 +104,7 @@ fun StatisticsScreen(
     ) { scaffoldPadding ->
         val recordListState = viewModel.recordList.collectAsState(initial = emptyList())
         val savedGameList = viewModel.savedGamesList.collectAsState(initial = emptyList())
+        val savedGamesWithBoards = viewModel.savedGamesWithBoards.collectAsState(initial = emptyMap())
 
         Column(
             modifier = Modifier
@@ -136,6 +137,23 @@ fun StatisticsScreen(
                 selected = viewModel.selectedType,
                 onSelected = { viewModel.setType(it) }
             )
+
+            // Shown even without a win, since losses are what a win rate is about.
+            viewModel.getSelectionWinRate(savedGamesWithBoards.value)?.let { winRate ->
+                StatisticsSection(
+                    title = stringResource(R.string.win_rate),
+                    painter = painterResource(R.drawable.ic_outline_verified_24),
+                    statRows = listOf(
+                        listOf(stringResource(R.string.games_finished), winRate.finished.toString()),
+                        listOf(stringResource(R.string.games_won), winRate.won.toString()),
+                        listOf(
+                            stringResource(R.string.win_rate),
+                            winRate.percent?.let { stringResource(R.string.win_rate_percentage, it) }
+                                ?: stringResource(R.string.no_value_default)
+                        )
+                    )
+                )
+            }
 
             if (recordListState.value.isNotEmpty()) {
                 var averageTime by remember {
