@@ -1,0 +1,28 @@
+name: Play status (one-off)
+on:
+  push:
+    branches: [play-status]
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read Play status
+        env:
+          KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          pip install -q google-auth requests
+          python3 - <<'PY'
+          import json, os, requests
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+          c = service_account.Credentials.from_service_account_info(json.loads(os.environ["KEY"]), scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          c.refresh(Request())
+          s = requests.Session(); s.headers["Authorization"] = "Bearer " + c.token
+          B = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/se.undersphere.killersudoku"
+          e = s.post(B + "/edits").json()["id"]
+          def get(p):
+              r = s.get(f"{B}/edits/{e}/{p}"); print(f"== {p} ({r.status_code})"); print(json.dumps(r.json(), indent=1)[:4000])
+          for p in ["details", "tracks", "listings", "bundles", "testers/internal", "countryAvailability/internal"]:
+              get(p)
+          s.delete(f"{B}/edits/{e}")
+          PY
