@@ -155,8 +155,10 @@ fun Board(
 
         val isKiller = cages.isNotEmpty()
         val thinLineWidth = with(LocalDensity.current) { 1.3.dp.toPx() }
-        // killer boards need box borders that clearly differ from the cage outlines
+        // killer boards need box borders that clearly differ from the cage outlines,
+        // so they are thicker and drawn in the full number colour
         val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 2.4.dp else 1.3.dp).toPx() }
+        val boxLineColor = if (isKiller) foregroundColor else thickLineColor
         val cageLineWidth = with(LocalDensity.current) { 1.6.dp.toPx() }
         val cageLineColor = foregroundColor.copy(alpha = 0.9f)
 
@@ -412,7 +414,7 @@ fun Board(
             }
 
             drawBoardFrame(
-                thickLineColor = thickLineColor,
+                thickLineColor = boxLineColor,
                 thickLineWidth = thickLineWidth,
                 maxWidth = maxWidth,
                 cornerRadius = CornerRadius(15f, 15f)
@@ -422,7 +424,7 @@ fun Board(
             for (i in 1 until size) {
                 val isThickLine = i % horThick == 0
                 drawLine(
-                    color = if (isThickLine) thickLineColor else thinLineColor,
+                    color = if (isThickLine) boxLineColor else thinLineColor,
                     start = Offset(cellSize * i.toFloat(), 0f),
                     end = Offset(cellSize * i.toFloat(), maxWidth),
                     strokeWidth = if (isThickLine) thickLineWidth else thinLineWidth
@@ -433,7 +435,7 @@ fun Board(
                 val isThickLine = i % vertThick == 0
                 if (maxWidth >= cellSize * i) {
                     drawLine(
-                        color = if (isThickLine) thickLineColor else thinLineColor,
+                        color = if (isThickLine) boxLineColor else thinLineColor,
                         start = Offset(0f, cellSize * i.toFloat()),
                         end = Offset(maxWidth, cellSize * i.toFloat()),
                         strokeWidth = if (isThickLine) thickLineWidth else thinLineWidth
