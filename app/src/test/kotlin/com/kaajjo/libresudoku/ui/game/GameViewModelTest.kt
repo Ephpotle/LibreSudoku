@@ -336,7 +336,12 @@ class GameViewModelTest {
         viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
         listOf(3, 4, 6).forEach { number -> viewModel.sendEvent(GameUiEvent.NumberTapped(number)) }
         runCurrent()
+        assertTrue(viewModel.uiState.value.mistakesLimitDialog)
+        assertFalse(viewModel.uiState.value.endGame)
+        viewModel.sendEvent(GameUiEvent.EndGameAfterMistakes)
+        runCurrent()
 
+        assertFalse(viewModel.uiState.value.mistakesLimitDialog)
         assertEquals(3, viewModel.uiState.value.mistakesCount)
         assertEquals(6, viewModel.uiState.value.gameBoard[0][0].value)
         assertTrue(viewModel.uiState.value.endGame)
@@ -348,6 +353,31 @@ class GameViewModelTest {
         assertEquals(true, persistedGame?.giveUp)
         assertEquals(false, persistedGame?.canContinue)
         assertEquals(1, savedGames.count { it.completed })
+        coVerify(exactly = 0) { recordRepository.insert(any<Record>()) }
+    }
+
+    @Test
+    fun `try again after the mistake limit takes back the last move and keeps playing`() = runGameTest {
+        stubSettings(
+            GameSettings(inputMethod = 0, remainingUse = false, mistakesLimit = true, mistakesMethod = 2)
+        )
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        listOf(3, 4, 6).forEach { number -> viewModel.sendEvent(GameUiEvent.NumberTapped(number)) }
+        runCurrent()
+        assertTrue(viewModel.uiState.value.mistakesLimitDialog)
+        assertFalse(viewModel.uiState.value.gamePlaying)
+
+        viewModel.sendEvent(GameUiEvent.TryAgainAfterMistake)
+        runCurrent()
+
+        assertFalse(viewModel.uiState.value.mistakesLimitDialog)
+        assertFalse(viewModel.uiState.value.endGame)
+        assertTrue(viewModel.uiState.value.gamePlaying)
+        assertEquals(2, viewModel.uiState.value.mistakesCount)
+        assertEquals(4, viewModel.uiState.value.gameBoard[0][0].value)
+        assertEquals(2, persistedGame?.mistakes)
+        assertEquals(false, persistedGame?.completed)
         coVerify(exactly = 0) { recordRepository.insert(any<Record>()) }
     }
 

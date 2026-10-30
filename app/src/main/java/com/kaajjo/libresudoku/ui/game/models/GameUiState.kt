@@ -39,6 +39,8 @@ import com.kaajjo.libresudoku.data.database.model.Record
  * @property renderNotes Whether notes are visible on the player's board.
  * @property restartDialog Whether the restart confirmation dialog is visible.
  * @property giveUpDialog Whether the give-up confirmation dialog is visible.
+ * @property mistakesLimitDialog Whether the dialog offering to take back the move that reached the
+ * mistake limit is visible.
  * @property showMenu Whether the game actions menu is expanded.
  * @property showNotesMenu Whether the notes actions menu is expanded.
  * @property showUndoRedoMenu Whether the undo/redo menu is expanded.
@@ -76,6 +78,7 @@ data class GameUiState(
     val renderNotes: Boolean = true,
     val restartDialog: Boolean = false,
     val giveUpDialog: Boolean = false,
+    val mistakesLimitDialog: Boolean = false,
     val showMenu: Boolean = false,
     val showNotesMenu: Boolean = false,
     val showUndoRedoMenu: Boolean = false,

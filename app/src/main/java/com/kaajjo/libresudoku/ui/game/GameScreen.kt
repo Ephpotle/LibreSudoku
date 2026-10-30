@@ -420,6 +420,22 @@ private fun GameScreenContent(
             },
             onDismissRequest = { onEvent(GameUiEvent.DismissRestartDialog) }
         )
+    } else if (uiState.mistakesLimitDialog) {
+        AlertDialog(
+            title = { Text(stringResource(R.string.game_over_mistakes)) },
+            text = { Text(stringResource(R.string.mistakes_try_again_text)) },
+            dismissButton = {
+                TextButton(onClick = { onEvent(GameUiEvent.EndGameAfterMistakes) }) {
+                    Text(stringResource(R.string.mistakes_end_game))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onEvent(GameUiEvent.TryAgainAfterMistake) }) {
+                    Text(stringResource(R.string.mistakes_try_again))
+                }
+            },
+            onDismissRequest = { }
+        )
     } else if (uiState.giveUpDialog) {
         AlertDialog(
             title = { Text(stringResource(R.string.action_give_up)) },
