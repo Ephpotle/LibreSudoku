@@ -110,6 +110,9 @@
     <string name="game_completed_text">Puzzle completed! You can stay here or return to the main menu.</string>
     <string name="game_over">Game over</string>
     <string name="game_over_mistakes">You have made 3 mistakes</string>
+    <string name="mistakes_try_again_text">Was it a misclick? Try again takes back your last move so you can keep playing.</string>
+    <string name="mistakes_try_again">Try again</string>
+    <string name="mistakes_end_game">End game</string>
     <string name="dialog_generating">Generating…</string>
     <string name="dialog_solving">Solving…</string>
     <string name="statistics">Statistics</string>

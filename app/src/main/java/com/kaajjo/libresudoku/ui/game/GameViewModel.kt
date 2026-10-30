@@ -179,6 +179,8 @@ class GameViewModel @Inject constructor(
             GameUiEvent.ShowGiveUpDialog -> showGiveUpDialog()
             GameUiEvent.DismissGiveUpDialog -> dismissGiveUpDialog()
             GameUiEvent.ConfirmGiveUp -> confirmGiveUp()
+            GameUiEvent.TryAgainAfterMistake -> tryAgainAfterMistake()
+            GameUiEvent.EndGameAfterMistakes -> endGameAfterMistakes()
             is GameUiEvent.SetMenuVisible -> setMenuVisible(event.visible)
             is GameUiEvent.SetNotesMenuVisible -> setNotesMenuVisible(event.visible)
             is GameUiEvent.SetUndoRedoMenuVisible -> setUndoRedoMenuVisible(event.visible)
@@ -273,6 +275,28 @@ class GameViewModel @Inject constructor(
         if (state.giveUpDialog) finishGame(giveUp = true)
     }
 
+    private fun showMistakesLimitDialog() {
+        if (state.endGame || state.mistakesLimitDialog) return
+        pauseTimer()
+        cancelAdvancedHint()
+        _uiState.update { it.copy(mistakesLimitDialog = true, showMenu = false) }
+        queueSave()
+    }
+
+    // A mistake is often just a misclick, so let the player take it back instead of losing the game
+    private fun tryAgainAfterMistake() {
+        if (!state.mistakesLimitDialog) return
+        if (undoRedoManager.canUndo()) restoreMove(undoRedoManager.undo())
+        _uiState.update {
+            it.copy(mistakesLimitDialog = false, mistakesCount = (it.mistakesCount - 1).coerceAtLeast(0))
+        }
+        startTimer()
+    }
+
+    private fun endGameAfterMistakes() {
+        if (state.mistakesLimitDialog) finishGame(giveUp = true)
+    }
+
     private fun setMenuVisible(visible: Boolean) {
         _uiState.update { it.copy(showMenu = visible) }
     }
@@ -313,8 +337,9 @@ class GameViewModel @Inject constructor(
             cancelAdvancedHint()
             when {
                 state.endGame -> Unit
+                state.mistakesLimitDialog -> Unit
                 state.settings.mistakesLimit && state.mistakesCount >= PreferencesConstants.MISTAKES_LIMIT ->
-                    finishGame(giveUp = true)
+                    showMistakesLimitDialog()
                 isCompleted() -> finishGame(giveUp = false)
                 else -> queueSave()
             }
@@ -375,8 +400,12 @@ class GameViewModel @Inject constructor(
                         _uiState.update { it.copy(allRecords = records) }
                     }
                 }
-                queueSave()
-                startTimer()
+                if (state.settings.mistakesLimit && state.mistakesCount >= PreferencesConstants.MISTAKES_LIMIT) {
+                    showMistakesLimitDialog()
+                } else {
+                    queueSave()
+                    startTimer()
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -593,14 +622,19 @@ class GameViewModel @Inject constructor(
         pauseTimer()
         cancelAdvancedHint()
         _uiState.update {
-            it.copy(endGame = true, giveUp = giveUp, currCell = Cell(-1, -1), giveUpDialog = false, showMenu = false)
+            it.copy(
+                endGame = true, giveUp = giveUp, currCell = Cell(-1, -1), giveUpDialog = false,
+                mistakesLimitDialog = false, showMenu = false
+            )
         }
         queueSave(recordCompletion = !giveUp)
     }
 
     private fun startTimer() {
         if (!screenResumed || !playRequested || state.isLoading || state.loadError || state.endGame ||
-            state.settings.firstGame || state.restartDialog || state.giveUpDialog || timerJob?.isActive == true) return
+            state.settings.firstGame || state.restartDialog || state.giveUpDialog || state.mistakesLimitDialog ||
+            timerJob?.isActive == true
+        ) return
         _uiState.update { it.copy(gamePlaying = true) }
         timerJob = viewModelScope.launch {
             while (isActive) {

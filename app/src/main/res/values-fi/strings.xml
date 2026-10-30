@@ -85,6 +85,9 @@
     <string name="game_completed">Peli valmis</string>
     <string name="game_over">Peli loppui</string>
     <string name="game_over_mistakes">Teit kolme virhettä</string>
+    <string name="mistakes_try_again_text">Oliko se väärä painallus? Yritä uudelleen peruu viimeisen siirtosi, jotta voit jatkaa pelaamista.</string>
+    <string name="mistakes_try_again">Yritä uudelleen</string>
+    <string name="mistakes_end_game">Lopeta peli</string>
     <string name="dialog_generating">Luodaan…</string>
     <string name="games_completed">Valmiita pelejä</string>
     <string name="games_finished">Päättyneitä pelejä</string>

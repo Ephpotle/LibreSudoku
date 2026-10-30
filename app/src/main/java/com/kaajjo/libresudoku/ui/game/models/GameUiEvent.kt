@@ -111,6 +111,16 @@ sealed interface GameUiEvent {
     data object ConfirmGiveUp : GameUiEvent
 
     /**
+     * Takes back the move that reached the mistake limit, forgives that mistake and resumes the game
+     */
+    data object TryAgainAfterMistake : GameUiEvent
+
+    /**
+     * Ends the game as lost after reaching the mistake limit
+     */
+    data object EndGameAfterMistakes : GameUiEvent
+
+    /**
      * Changes the visibility of the game actions menu
      *
      * @property visible Whether the menu should be expanded.
