@@ -39,6 +39,14 @@ sealed interface GameUiSideEffect {
     data object GameRestarted : GameUiSideEffect
 
     /**
+     * Signals that the player just solved the puzzle, so the screen can celebrate.
+     * Not sent when a finished game is reopened.
+     *
+     * @property playSound Whether the win chime is enabled in settings.
+     */
+    data class GameWon(val playSound: Boolean) : GameUiSideEffect
+
+    /**
      * Requests a localized notification that saving the game or its completion record failed.
      */
     data object SaveFailed : GameUiSideEffect

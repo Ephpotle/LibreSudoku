@@ -132,7 +132,8 @@ class GameViewModel @Inject constructor(
                 appSettingsManager.resetTimerEnabled.setting { copy(resetTimerOnRestart = it) },
                 appSettingsManager.hintsDisabled.setting { copy(disableHints = it) },
                 appSettingsManager.inputMethod.setting { copy(inputMethod = it) },
-                appSettingsManager.advancedHintEnabled.setting { copy(advancedHintEnabled = it) }
+                appSettingsManager.advancedHintEnabled.setting { copy(advancedHintEnabled = it) },
+                appSettingsManager.winSound.setting { copy(winSound = it) }
             ) { mutations ->
                 mutations.fold(GameSettings()) { settings, mutate -> mutate(settings) }
             }.collect { settings ->
@@ -628,6 +629,7 @@ class GameViewModel @Inject constructor(
             )
         }
         queueSave(recordCompletion = !giveUp)
+        if (!giveUp) produceSideEffect(GameUiSideEffect.GameWon(playSound = state.settings.winSound))
     }
 
     private fun startTimer() {

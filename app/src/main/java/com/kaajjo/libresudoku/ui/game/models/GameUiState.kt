@@ -111,6 +111,7 @@ data class GameUiState(
  * @property disableHints Whether regular hints are disabled.
  * @property inputMethod Preferred input order: 0 for cell-first and 1 for digit-first.
  * @property advancedHintEnabled Whether the advanced hint action is available.
+ * @property winSound Whether to play a short chime when the puzzle is solved.
  */
 data class GameSettings(
     val firstGame: Boolean = false,
@@ -128,5 +129,6 @@ data class GameSettings(
     val resetTimerOnRestart: Boolean = PreferencesConstants.DEFAULT_GAME_RESET_TIMER,
     val disableHints: Boolean = PreferencesConstants.DEFAULT_HINTS_DISABLED,
     val inputMethod: Int = PreferencesConstants.DEFAULT_INPUT_METHOD,
-    val advancedHintEnabled: Boolean = PreferencesConstants.DEFAULT_ADVANCED_HINT
+    val advancedHintEnabled: Boolean = PreferencesConstants.DEFAULT_ADVANCED_HINT,
+    val winSound: Boolean = PreferencesConstants.DEFAULT_WIN_SOUND
 )

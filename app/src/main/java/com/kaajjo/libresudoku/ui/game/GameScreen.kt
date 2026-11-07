@@ -8,8 +8,11 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -42,6 +45,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -84,6 +88,8 @@ import com.kaajjo.libresudoku.ui.game.components.NotesMenu
 import com.kaajjo.libresudoku.ui.game.components.ToolBarItem
 import com.kaajjo.libresudoku.ui.game.components.ToolbarItem
 import com.kaajjo.libresudoku.ui.game.components.UndoRedoMenu
+import com.kaajjo.libresudoku.ui.game.components.WinConfetti
+import com.kaajjo.libresudoku.ui.game.components.playWinChime
 import com.kaajjo.libresudoku.ui.game.models.GameUiEvent
 import com.kaajjo.libresudoku.ui.game.models.GameUiSideEffect
 import com.kaajjo.libresudoku.ui.game.models.GameUiState
@@ -107,6 +113,7 @@ fun GameScreen(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var restartButtonAngle by remember { mutableFloatStateOf(0f) }
+    var celebration by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(viewModel, lifecycleOwner, navigator, clipboardManager, context, localView) {
         viewModel.effect
@@ -134,6 +141,10 @@ fun GameScreen(
                         localView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     }
                     GameUiSideEffect.GameRestarted -> restartButtonAngle -= 360f
+                    is GameUiSideEffect.GameWon -> {
+                        celebration++
+                        if (effect.playSound) playWinChime(context)
+                    }
                     GameUiSideEffect.SaveFailed -> Toast.makeText(
                         context,
                         R.string.game_save_error,
@@ -162,11 +173,15 @@ fun GameScreen(
 
     BackHandler { viewModel.sendEvent(GameUiEvent.NavigateBack) }
 
-    GameScreenContent(
-        uiState = uiState,
-        onEvent = viewModel::sendEvent,
-        restartButtonAngle = restartButtonAngle
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        GameScreenContent(
+            uiState = uiState,
+            onEvent = viewModel::sendEvent,
+            restartButtonAngle = restartButtonAngle,
+            celebration = celebration
+        )
+        WinConfetti(trigger = celebration, modifier = Modifier.fillMaxSize())
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -174,7 +189,8 @@ fun GameScreen(
 private fun GameScreenContent(
     uiState: GameUiState,
     onEvent: (GameUiEvent) -> Unit,
-    restartButtonAngle: Float
+    restartButtonAngle: Float,
+    celebration: Int = 0
 ) {
     val settings = uiState.settings
     val sudokuUtils = remember { SudokuUtils() }
@@ -194,6 +210,15 @@ private fun GameScreenContent(
         targetValue = if (uiState.gamePlaying || uiState.endGame) 1f else 0.90f,
         label = "Game board scale"
     )
+
+    // A short bounce of the board when the puzzle is solved
+    val winPulse = remember { Animatable(1f) }
+    LaunchedEffect(celebration) {
+        if (celebration > 0) {
+            winPulse.animateTo(1.04f, tween(durationMillis = 160))
+            winPulse.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        }
+    }
 
     BackHandler(enabled = uiState.advancedHintMode) {
         onEvent(GameUiEvent.CancelAdvancedHint)
@@ -340,7 +365,7 @@ private fun GameScreenContent(
                     }
                 }
                 Board(
-                    modifier = Modifier.blur(boardBlur).scale(boardScale, boardScale),
+                    modifier = Modifier.blur(boardBlur).scale(boardScale * winPulse.value),
                     board = if (uiState.showSolution) uiState.solvedBoard else uiState.gameBoard,
                     size = uiState.size,
                     mainTextSize = fontSize,

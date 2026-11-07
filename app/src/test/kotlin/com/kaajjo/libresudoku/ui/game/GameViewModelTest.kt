@@ -223,6 +223,34 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `solving the puzzle asks the screen to celebrate once with the sound setting`() = runGameTest {
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, winSound = false))
+        coEvery { boardRepository.get(BOARD_ID) } returns board(emptyCells = 1)
+        val viewModel = loadedGame()
+        val effects = mutableListOf<GameUiSideEffect>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.effect.toList(effects) }
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        viewModel.sendEvent(GameUiEvent.NumberTapped(5))
+        viewModel.sendEvent(GameUiEvent.NumberTapped(5))
+        runCurrent()
+
+        assertEquals(listOf(GameUiSideEffect.GameWon(playSound = false)), effects)
+    }
+
+    @Test
+    fun `giving up does not celebrate`() = runGameTest {
+        val viewModel = loadedGame()
+        val effects = mutableListOf<GameUiSideEffect>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.effect.toList(effects) }
+        viewModel.sendEvent(GameUiEvent.ShowGiveUpDialog)
+        viewModel.sendEvent(GameUiEvent.ConfirmGiveUp)
+        runCurrent()
+
+        assertTrue(viewModel.uiState.value.endGame)
+        assertFalse(effects.any { it is GameUiSideEffect.GameWon })
+    }
+
+    @Test
     fun `background time is excluded and repeated resume does not duplicate the timer`() = runGameTest {
         val viewModel = loadedGame()
         advanceTimeBy(2_000)
@@ -584,6 +612,7 @@ class GameViewModelTest {
         every { appSettings.hintsDisabled } returns flowOf(settings.disableHints)
         every { appSettings.inputMethod } returns flowOf(settings.inputMethod)
         every { appSettings.advancedHintEnabled } returns flowOf(settings.advancedHintEnabled)
+        every { appSettings.winSound } returns flowOf(settings.winSound)
         every { appSettings.advancedHintSettings } returns flowOf(AdvancedHintSettings())
     }
 

@@ -23,6 +23,7 @@ data class SettingsBackup(
     val autoEraseNotes: Boolean = PreferencesConstants.DEFAULT_AUTO_ERASE_NOTES,
     val fontSize: Int = PreferencesConstants.DEFAULT_FONT_SIZE_FACTOR,
     val keepScreenOn: Boolean = PreferencesConstants.DEFAULT_KEEP_SCREEN_ON,
+    val winSound: Boolean = PreferencesConstants.DEFAULT_WIN_SOUND,
     val funKeyboardOverNum: Boolean = PreferencesConstants.DEFAULT_FUN_KEYBOARD_OVER_NUM,
     val dateFormat: String = "",
     val saveSelectedGameDifficulty: Boolean = PreferencesConstants.DEFAULT_SAVE_LAST_SELECTED_DIFF_TYPE,
@@ -50,6 +51,7 @@ data class SettingsBackup(
         settings.setAutoEraseNotes(autoEraseNotes)
         settings.setFontSize(fontSize)
         settings.setKeepScreenOn(keepScreenOn)
+        settings.setWinSound(winSound)
         settings.setFunKeyboardOverNum(funKeyboardOverNum)
         settings.setDateFormat(dateFormat)
         settings.setSaveSelectedGameDifficultyType(saveSelectedGameDifficulty)
@@ -84,6 +86,7 @@ data class SettingsBackup(
                 autoEraseNotes = runBlocking { settings.autoEraseNotes.first() },
                 fontSize = runBlocking { settings.fontSize.first() },
                 keepScreenOn = runBlocking { settings.keepScreenOn.first() },
+                winSound = runBlocking { settings.winSound.first() },
                 funKeyboardOverNum = runBlocking { settings.funKeyboardOverNumbers.first() },
                 dateFormat = runBlocking { settings.dateFormat.first() },
                 saveSelectedGameDifficulty = runBlocking { settings.saveSelectedGameDifficultyType.first() },
