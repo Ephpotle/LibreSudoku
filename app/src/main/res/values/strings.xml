@@ -74,6 +74,8 @@
     <string name="pref_auto_erase_notes">Auto erase notes</string>
     <string name="pref_other">Other</string>
     <string name="pref_keep_screen_on">Keep screen awake</string>
+    <string name="pref_win_sound">Win sound</string>
+    <string name="pref_win_sound_summ">Play a short chime when you solve a puzzle. Stays quiet when the phone is on silent or vibrate</string>
     <string name="pref_reset_tipcards">Reset all tutorial tips</string>
     <string name="pref_tipcards_reset">Tutorial tips reset!</string>
     <string name="pref_app_language">App language</string>

@@ -68,6 +68,9 @@ class AppSettingsManager(context: Context) {
     // keep screen on
     private val keepScreenOnKey = booleanPreferencesKey("keep_screen_on")
 
+    // short chime when a game is solved
+    private val winSoundKey = booleanPreferencesKey("win_sound")
+
     // first game
     private val firstGameKey = booleanPreferencesKey("first_game")
 
@@ -232,6 +235,16 @@ class AppSettingsManager(context: Context) {
 
     val keepScreenOn = dataStore.data.map { preferences ->
         preferences[keepScreenOnKey] ?: PreferencesConstants.DEFAULT_KEEP_SCREEN_ON
+    }
+
+    suspend fun setWinSound(enabled: Boolean) {
+        dataStore.edit { settings ->
+            settings[winSoundKey] = enabled
+        }
+    }
+
+    val winSound = dataStore.data.map { preferences ->
+        preferences[winSoundKey] ?: PreferencesConstants.DEFAULT_WIN_SOUND
     }
 
     suspend fun setFirstGame(value: Boolean) {

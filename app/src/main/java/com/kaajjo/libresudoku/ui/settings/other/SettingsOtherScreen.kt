@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
@@ -53,6 +54,7 @@ fun SettingsOtherScreen(
     val saveLastSelectedDifficultyType by viewModel.saveLastSelectedDifficultyType
         .collectAsStateWithLifecycle(initialValue = PreferencesConstants.DEFAULT_SAVE_LAST_SELECTED_DIFF_TYPE)
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle(initialValue = PreferencesConstants.DEFAULT_KEEP_SCREEN_ON)
+    val winSound by viewModel.winSound.collectAsStateWithLifecycle(initialValue = PreferencesConstants.DEFAULT_WIN_SOUND)
 
     SettingsScaffoldLazyColumn(
         titleText = stringResource(R.string.pref_other),
@@ -84,6 +86,18 @@ fun SettingsOtherScreen(
                         viewModel.updateKeepScreenOn(!keepScreenOn)
                     },
                     painter = rememberVectorPainter(Icons.Outlined.Smartphone)
+                )
+            }
+
+            item {
+                PreferenceRowSwitch(
+                    title = stringResource(R.string.pref_win_sound),
+                    subtitle = stringResource(R.string.pref_win_sound_summ),
+                    checked = winSound,
+                    onClick = {
+                        viewModel.updateWinSound(!winSound)
+                    },
+                    painter = rememberVectorPainter(Icons.Outlined.MusicNote)
                 )
             }
 

@@ -29,6 +29,13 @@ class SettingsOtherViewModel @Inject constructor(
         }
     }
 
+    val winSound = settings.winSound
+    fun updateWinSound(enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            settings.setWinSound(enabled)
+        }
+    }
+
     fun resetTipCards() {
         viewModelScope.launch {
             tipCardsDataStore.setStreakCard(true)
