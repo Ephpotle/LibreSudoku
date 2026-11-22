@@ -42,6 +42,10 @@
   methods i apply to find the right numbers are equally challenging but somehow
   different. i would like you to understand the differences and make that aspect a game
   factor that people can understand is in play to create new elements of challenge."
+- 2026-11-22: Standing goal "improve the general visual design and gameplay feel to the
+  best of your ability", worked in the thread "Improve visual design and gameplay feel"
+  (first PR #11). The no-solving-aids rule applies to it. Loop sessions do not open
+  competing design PRs.
 - 2026-10-25: He agreed ("yes ok") to technique-graded levels plus a personal win rate
   per level. The win rate is a side signal of difficulty, not the goal.
 - 2026-10-25: The fork lives on the GitHub account **Ephpotle**, not hirvi22.

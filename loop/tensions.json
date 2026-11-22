@@ -131,12 +131,35 @@
    "waits_on": "Old-app screenshots from Markus for part (b).",
    "last_session": null,
    "last_reflect": null
+  },
+  {
+   "id": "T6",
+   "stage": "4",
+   "importance": 2,
+   "goal": "The app's visual design and gameplay feel are as good as they can be (Markus, 2026-11-22: \"improve the general visual design and gameplay feel to the best of your ability\").",
+   "measure": "Open feel/design PRs merged by Markus, and his verdict on each. Today: PR #11 open (selected-cage highlight, gliding selection, digit pop, tactile keys, info pills).",
+   "opened": "2026-11-22",
+   "level": 0,
+   "level_reason": "New. Worked in its own thread.",
+   "gap": "2026-11-22: First result PR #11, from the thread \"Improve visual design and gameplay feel\" (reported by that thread, not verified by the loop).",
+   "known_to_work": [],
+   "tried": [],
+   "not_tried": [],
+   "bounded_by": [
+    "No solving aids (2026-11-08): design may make the board easier to read, never do the thinking.",
+    "Owned by the thread \"Improve visual design and gameplay feel\"; the loop does not open competing design PRs."
+   ],
+   "next_commitment": "None for loop sessions. Reflections check PR #11 and that thread's progress, and make sure Extreme, hardness and style displays (T2, T5) reuse its visual language.",
+   "waits_on": "The design thread and Markus's review of PR #11.",
+   "last_session": null,
+   "last_reflect": null
   }
  ],
  "parked": [
   {
-   "idea": "Backlog items 3, 7-14 (cage highlight, post-game techniques, rename, killer-first home, daily killer, 12x12, upstream sync, UI tests, export).",
-   "reopens_when": "A reflection finds T1-T4 blocked with nothing workable, or Markus asks for one."
+   "idea": "Backlog items 7-14 (post-game techniques, rename, killer-first home, daily killer, 12x12, upstream sync, UI tests, export).",
+   "reopens_when": "A reflection finds T1-T4 blocked with nothing workable, or Markus asks for one.",
+   "note": "Item 3 (cage highlight) superseded 2026-11-22 by PR #11 from the design thread (T6)."
   },
   {
    "idea": "Backlog item 6 (Recommended level toward his own 40% win rate).",

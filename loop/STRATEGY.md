@@ -39,7 +39,8 @@ difficulty filter (his correction). Draft 3 is his own reframing.
    hardness, generated fast enough to start at once.
 3. **Distinction.** Records and badges for solving high-hardness puzzles, on the
    leaderboard he chooses.
-4. **His app.** Name, home screen, upkeep.
+4. **His app.** Visual design and gameplay feel (his standing goal of 2026-11-22, worked
+   in its own thread, T6), name, home screen, upkeep.
 
 ## Current bottleneck (draft)
 
