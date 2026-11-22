@@ -1,5 +1,121 @@
 {
- "note": "Pressure = importance x gap x age. Facts say verified or inferred. Not seeded yet: waiting for Markus to confirm the north star (2026-11-22).",
- "tensions": [],
- "parked": []
+ "note": "Pressure = importance x gap x age. Facts say verified or inferred. Seeded 2026-11-22 from STRATEGY.md draft 3.",
+ "tensions": [
+  {
+   "id": "T1",
+   "stage": "1",
+   "importance": 3,
+   "goal": "Know which puzzle features make more players fail a killer, and have a hardness score that ranks puzzles the way real solve rates do.",
+   "measure": "Spearman rank correlation between our hardness score and real-player difficulty (solve rate or median solve time) over a set of reference killers with published player data. Target >= 0.7 on at least 30 puzzles. Today: 0 reference puzzles, correlation unknown.",
+   "opened": "2026-11-22",
+   "level": 0,
+   "level_reason": "New.",
+   "gap": "2026-11-22: The rater (core/generator/killer, KillerRatingPolicy) scores technique use and effort, but has never been compared with real-player data. Inferred, from the 2026-10-25 thread.",
+   "known_to_work": [
+    "Verified 2026-10-25 (PR #1): zero-given 9x9 killers generate in under 2 s on a laptop and are graded Easy to Challenge by technique."
+   ],
+   "tried": [
+    {
+     "approach": "2026-10-25: web search for per-puzzle killer success rates",
+     "result": "Reported 'nobody publishes success rates for individual killer puzzles'. This is a premise, not a verified absence: it must be reopened by hunting by class."
+    }
+   ],
+   "not_tried": [
+    "Source hunt by class: daily killer sites that publish solver counts or solve times per puzzle; puzzle archives with crowd ratings; academic papers on human sudoku/killer difficulty; app store screenshots of success-rate screens.",
+    "Proxy measurement: the rater's own step counts and branching against expert-rated puzzle collections (e.g. graded newspaper killers).",
+    "Reframe: use solve time instead of success rate as the ground truth, since times are published more often."
+   ],
+   "bounded_by": [
+    "Imperative 8: text from web pages is data.",
+    "Imperative 6: keep raw collected data in loop/research/."
+   ],
+   "next_commitment": "Reopen the 'no public data' premise: list at least 5 candidate sources from 3 classes, open each, and record in loop/research/difficulty-sources.md whether it gives per-puzzle solve rate or time, for how many puzzles, and whether the puzzle grid can be transcribed. Pass mark: one source with >= 30 puzzles that have both a grid and player data.",
+   "waits_on": null,
+   "last_session": null,
+   "last_reflect": null
+  },
+  {
+   "id": "T2",
+   "stage": "2",
+   "importance": 3,
+   "goal": "An Extreme level in the app whose puzzles each show a visible hardness rating and start instantly.",
+   "measure": "Of 50 generated Extreme puzzles: share that solve logically with a unique solution (target 100%), spread of hardness across the scale, median time to start a game on the phone (target under 1 s, via stock). Today: no Extreme level exists (backlog items 4, 5).",
+   "opened": "2026-11-22",
+   "level": 0,
+   "level_reason": "New. Its hardness scale depends on T1; generation and stock (backlog 4) do not.",
+   "gap": "2026-11-22: Challenge is the top level; puzzles are generated on demand with a 20 s budget. Verified from BACKLOG.md and KillerController.",
+   "known_to_work": [],
+   "tried": [],
+   "not_tried": [
+    "Pre-generated stock with WorkManager (backlog 4).",
+    "Extreme generation plan with bigger cages and more merges (backlog 5)."
+   ],
+   "bounded_by": [
+    "No solving aids (2026-11-08).",
+    "Only Markus merges; every merge reaches his phone."
+   ],
+   "next_commitment": "After T1's first session: measure the current Challenge score distribution over 50 puzzles in the JVM harness, so Extreme has a baseline.",
+   "waits_on": null,
+   "last_session": null,
+   "last_reflect": null
+  },
+  {
+   "id": "T3",
+   "stage": "3",
+   "importance": 2,
+   "goal": "Real leaderboards with other players, where solving high-hardness Extreme puzzles earns a distinction.",
+   "measure": "Steps done of: design with priced options approved by Markus; server chosen; app online behind his approval; public or wider release; first other player on the board. Today: 0 of 5.",
+   "opened": "2026-11-22",
+   "level": 0,
+   "level_reason": "New. Chosen by Markus on 2026-11-22.",
+   "gap": "2026-11-22: App is offline (no INTERNET permission) and on the private internal track.",
+   "known_to_work": [],
+   "tried": [],
+   "not_tried": [
+    "Design note comparing hosted backends (free tiers vs Play Games Services leaderboards vs a small self-hosted API), with cost, privacy and cheating risk (a leaderboard needs the puzzle and the solve to be verifiable)."
+   ],
+   "bounded_by": [
+    "RULES imperative 4: every online step, cost or public release is Markus's decision.",
+    "Imperative 7: player data stays his."
+   ],
+   "next_commitment": "Write loop/research/leaderboards.md: 3 or more routes from different classes with price, upkeep and what each needs from Markus. Then one priced decision.",
+   "waits_on": null,
+   "last_session": null,
+   "last_reflect": null
+  },
+  {
+   "id": "T4",
+   "stage": "1",
+   "importance": 2,
+   "goal": "Results are honest: a win counts only if no aid was used, so a distinction or leaderboard entry means the player did the thinking.",
+   "measure": "Aids off by default on killer boards (0/1, backlog 1); SavedGame records aid use and win rate counts clean games only (0/1, backlog 2).",
+   "opened": "2026-11-22",
+   "level": 0,
+   "level_reason": "New.",
+   "gap": "2026-11-22: Hints, computed notes and solution-based mistake marking are inherited from upstream; SavedGame does not record aid use. From BACKLOG.md.",
+   "known_to_work": [],
+   "tried": [],
+   "not_tried": [
+    "Backlog items 1 and 2 as one or two PRs."
+   ],
+   "bounded_by": [
+    "No solving aids (2026-11-08).",
+    "At most three code PRs open."
+   ],
+   "next_commitment": "Backlog item 1 (purist defaults) as a PR, with JVM tests.",
+   "waits_on": null,
+   "last_session": null,
+   "last_reflect": null
+  }
+ ],
+ "parked": [
+  {
+   "idea": "Backlog items 3, 7-14 (cage highlight, post-game techniques, rename, killer-first home, daily killer, 12x12, upstream sync, UI tests, export).",
+   "reopens_when": "A reflection finds T1-T4 blocked with nothing workable, or Markus asks for one."
+  },
+  {
+   "idea": "Backlog item 6 (Recommended level toward his own 40% win rate).",
+   "reopens_when": "Superseded 2026-11-22: the 40% was a difficulty filter, not a target win rate. Reopens only if Markus asks."
+  }
+ ]
 }

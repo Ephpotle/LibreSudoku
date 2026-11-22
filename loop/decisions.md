@@ -4,10 +4,6 @@
 
 1. **Confirm the north star and its terms** (asked 2026-11-22). See `STRATEGY.md`.
    Everything else waits on it: the ledger is not seeded until he confirms.
-2. **Leaderboards: personal or with other players?** (asked 2026-11-22 on a card).
-   Personal records need no new permissions. Real leaderboards need internet access in
-   the app, a server, accounts or nicknames, and probably a public Play release:
-   imperative 4 in `RULES.md` forbids that until he decides.
 3. **Reference puzzles for the yardstick.** Can he share a few of the <40% puzzles from
    his old app (screenshots), and name the app? Recommendation: 3 to 5 screenshots; the
    loop transcribes and rates them.
@@ -24,6 +20,9 @@
 - Only Markus merges to `main`; every merge reaches his phone.
 
 ## Answered
+
+- 2026-11-22 (card): "Real leaderboards with others". Written into RULES imperative 4
+  and the strategy; concrete online steps remain separate decisions.
 
 - 2026-11-22: "the 40% success rate assumption is a bit off" — the 40% was a filter for
   hard puzzles chosen by other players' results, not a target win rate. Strategy redrafted.

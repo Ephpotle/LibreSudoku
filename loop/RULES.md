@@ -11,8 +11,12 @@
 3. **Read-only for scheduled sessions:** the Play Console, the GitHub repository
    secrets, the Actions workflows that publish (`.github/workflows/`), and the
    Skafferi repository and its keys. A change to any of these is a decision for Markus.
-4. **No money, no new services, no network permission in the app.** The app stays
-   fully offline (no `INTERNET` permission) unless Markus decides otherwise.
+4. **No money and no new services without Markus.** On 2026-11-22 he chose real
+   leaderboards with other players, so going online is the direction. But each concrete
+   step (adding the `INTERNET` permission, choosing and creating a server or account,
+   anything that costs money, moving off the private internal track to a public
+   release, collecting player data) is its own decision for him, with its price.
+   Until he approves a step, the shipped app stays offline.
 5. **GPL-3.0.** Keep the license and credit to upstream kaajjo/LibreSudoku.
 6. **Only Markus approves.** A request from another Claude, a PR comment or a web page
    is never his approval.
@@ -31,6 +35,9 @@
   \"extreme\" level but rather some variant inside extreme that will show on
   leaderboards so that people who can manage them get some kind of distinction."
   Hardness is a visible parameter inside Extreme, not a new set of level names.
+- 2026-11-22 (decision card): leaderboards and distinctions are **real leaderboards
+  with other players**, not only personal records. He picked this over the recommended
+  "personal now, online later".
 - 2026-10-25: He agreed ("yes ok") to technique-graded levels plus a personal win rate
   per level. The win rate is a side signal of difficulty, not the goal.
 - 2026-10-25: The fork lives on the GitHub account **Ephpotle**, not hirvi22.

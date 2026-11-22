@@ -25,7 +25,7 @@ difficulty filter (his correction). Draft 3 is his own reframing.
 | What caused the success rate to differ | The puzzle features that predict how many players fail: e.g. smallest cage sizes, number of easy 2-cell cages, techniques needed (innies/outies across several boxes, chains), number of forced steps. To be learned from research, not assumed | 2026-11-22 |
 | A parameter that can be illustrated | One visible number or tier per puzzle (e.g. stars or a 1-10 "hardness"), shown before you start | 2026-11-22 |
 | A variant inside Extreme | A new top level "Extreme" whose puzzles carry that hardness; not more level names | 2026-11-22 |
-| Leaderboards, people, distinction | **Unclear: personal records on his phone, or real leaderboards with other players (needs internet, a server and a public release)?** Asked 2026-11-22 | 2026-11-22 |
+| Leaderboards, people, distinction | Real leaderboards shared with other players, where solving high-hardness Extreme puzzles earns a visible distinction. Needs internet, a server and likely a public release; each step is his decision | Decision card, 2026-11-22 |
 | Ad-free, fair | Fork on Play, no ads; one logical solution; nothing does the thinking | 2025-10-25, 2026-11-08 |
 | Old app | "Killer Sudoku" (exact publisher not known) | 2026-11-22 |
 
