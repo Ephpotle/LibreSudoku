@@ -59,6 +59,18 @@ android {
     testOptions {
         // Robolectric tests (including the opt-in screenshot test) read app resources such as fonts
         unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Robolectric downloads its Android jar at test time; Maven Central often refuses
+            // CI runners, so fetch it from Google's mirror of Maven Central instead
+            test.systemProperty(
+                "robolectric.dependency.repo.url",
+                "https://maven-central.storage-download.googleapis.com/maven2"
+            )
+            // the screenshot test needs its own Android jar, so it only runs when asked for
+            if (System.getenv("SCREENSHOT_DIR") == null) {
+                test.exclude("**/GameScreenshotTest*")
+            }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
