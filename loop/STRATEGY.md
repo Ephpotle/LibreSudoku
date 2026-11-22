@@ -27,6 +27,7 @@ difficulty filter (his correction). Draft 3 is his own reframing.
 | A variant inside Extreme | A new top level "Extreme" whose puzzles carry that hardness; not more level names | 2026-11-22 |
 | Leaderboards, people, distinction | Real leaderboards shared with other players, where solving high-hardness Extreme puzzles earns a visible distinction. Needs internet, a server and likely a public release; each step is his decision | Decision card, 2026-11-22 |
 | Ad-free, fair | Fork on Play, no ads; one logical solution; nothing does the thinking | 2025-10-25, 2026-11-08 |
+| A different feel, made a game factor | A named solving style per puzzle (for example cage arithmetic vs cage combinations), measured from the deductions it needs and shown so players know which kind of challenge is in play. Reading to confirm | 2026-11-22 |
 | Old app | "Killer Sudoku" (exact publisher not known) | 2026-11-22 |
 
 ## Stages (draft)

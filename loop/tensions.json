@@ -106,6 +106,31 @@
    "waits_on": null,
    "last_session": null,
    "last_reflect": null
+  },
+  {
+   "id": "T5",
+   "stage": "1",
+   "importance": 3,
+   "goal": "Understand why our killers feel different to solve from the old \"Killer Sudoku\" app's, and turn that difference into a named game factor (a solving style) players can see and choose, as a new kind of challenge.",
+   "measure": "(a) Named style dimensions, each a number computed per puzzle (for example share of deductions from cage arithmetic/45-rule vs from cage combinations vs from plain sudoku logic; cage size mix). (b) For reference puzzles from both apps, the style numbers separate the two apps. (c) Markus agrees the named style matches the feel. Today: 0 dimensions measured, 0 reference puzzles from the old app.",
+   "opened": "2026-11-22",
+   "level": 0,
+   "level_reason": "New.",
+   "gap": "2026-11-22: Markus: \"the kind of methods i apply to find the right numbers are equally challenging but somehow different.\" Cause unknown. Hypotheses (inferred, untested): our generator merges cages into fewer, bigger ones, so solving leans on 45-rule arithmetic; the old app may keep more small cages and lean on combination logic, or have given digits.",
+   "known_to_work": [],
+   "tried": [],
+   "not_tried": [
+    "Ask Markus to describe one concrete step he uses in each app.",
+    "Transcribe old-app puzzles from screenshots and run both sets through our rater, logging which technique fires at each step.",
+    "Read published killer technique guides to name the style families."
+   ],
+   "bounded_by": [
+    "No solving aids: the style is shown as a property of the puzzle, never as help during play."
+   ],
+   "next_commitment": "Instrument the JVM rater to log the technique of each deduction for 50 Challenge puzzles and write the mix to loop/research/style-baseline.md. Pass mark: mix computed for all 50.",
+   "waits_on": "Old-app screenshots from Markus for part (b).",
+   "last_session": null,
+   "last_reflect": null
   }
  ],
  "parked": [
