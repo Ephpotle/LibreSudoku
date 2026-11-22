@@ -2,6 +2,9 @@ package com.kaajjo.libresudoku.ui.components.board
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -174,6 +177,56 @@ fun Board(
         }
         val cageTintIndex = remember(cages) { cageTintIndices(cages, cageTints.size) }
 
+        // the cage of the selected cell is outlined more strongly, so its shape is easy to follow
+        val selectedCageIndex = remember(cages, selectedCell.row, selectedCell.col) {
+            cages.indexOfFirst { cage ->
+                cage.cells.any { it.row == selectedCell.row && it.col == selectedCell.col }
+            }
+        }
+        // tertiary is a different hue from the cage outlines, so the selected cage stands apart
+        val selectedCageLineWidth = with(LocalDensity.current) { 2.8.dp.toPx() }
+        val selectedCageLineColor = colorScheme.tertiary
+        val selectedCageTint = colorScheme.tertiary.copy(
+            alpha = if (colorScheme.surface.luminance() < 0.5f) 0.30f else 0.22f
+        )
+
+        // The selection glides from cell to cell instead of jumping
+        val selectionPosition = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+        var selectionVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(selectedCell.row, selectedCell.col) {
+            if (selectedCell.row < 0 || selectedCell.col < 0) {
+                selectionVisible = false
+                return@LaunchedEffect
+            }
+            val target = Offset(selectedCell.col.toFloat(), selectedCell.row.toFloat())
+            if (!selectionVisible) {
+                selectionPosition.snapTo(target)
+                selectionVisible = true
+            } else {
+                selectionPosition.animateTo(
+                    target,
+                    spring(dampingRatio = 0.85f, stiffness = 1500f)
+                )
+            }
+        }
+
+        // A digit that was just placed pops in with a small bounce
+        val placedScale = remember { Animatable(1f) }
+        var placedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+        val previousValues = remember { arrayOfNulls<IntArray>(1) }
+        LaunchedEffect(board) {
+            val values = IntArray(size * size) { board[it / size][it % size].value }
+            val previous = previousValues[0]
+            previousValues[0] = values
+            if (previous == null || previous.size != values.size) return@LaunchedEffect
+            val changed = values.indices.filter { values[it] != previous[it] }
+            if (changed.size == 1 && values[changed[0]] != 0) {
+                placedCell = changed[0] / size to changed[0] % size
+                placedScale.snapTo(0.55f)
+                placedScale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+            }
+        }
+
         val killerSumBounds by remember { mutableStateOf(android.graphics.Rect()) }
 
         // paints
@@ -345,17 +398,29 @@ fun Board(
                     color = cageTints[cageTintIndex[index]]
                 )
             }
+            if (selectedCageIndex >= 0) {
+                drawKillerCageTint(
+                    cage = cages[selectedCageIndex],
+                    cellSize = cellSize,
+                    color = selectedCageTint
+                )
+            }
 
             if (selectedCell.row >= 0 && selectedCell.col >= 0) {
-                // current cell
+                // current cell, drawn where the gliding selection currently is
+                val selection = if (selectionVisible) {
+                    selectionPosition.value
+                } else {
+                    Offset(selectedCell.col.toFloat(), selectedCell.row.toFloat())
+                }
                 drawRoundCell(
                     row = selectedCell.row,
                     col = selectedCell.col,
                     gameSize = size,
                     rect = Rect(
                         offset = Offset(
-                            x = selectedCell.col * cellSize,
-                            y = selectedCell.row * cellSize
+                            x = selection.x * cellSize,
+                            y = selection.y * cellSize
                         ),
                         size = Size(cellSize, cellSize)
                     ),
@@ -451,7 +516,9 @@ fun Board(
                 lockedTextPaint = lockedTextPaint,
                 textPaint = textPaint,
                 questions = questions,
-                cellSize = cellSize
+                cellSize = cellSize,
+                poppedCell = placedCell,
+                poppedScale = placedScale.value
             )
 
             if (!notes.isNullOrEmpty() && !questions && renderNotes) {
@@ -480,7 +547,8 @@ fun Board(
 
             if (cages.isNotEmpty()) {
                 val labelPadding = cellSize * 0.06f
-                cages.forEach { cage ->
+                cages.forEachIndexed { index, cage ->
+                    val isSelectedCage = index == selectedCageIndex
                     val textToDraw = if (questions) "?" else cage.sum.toString()
                     killerSumPaint.getTextBounds(textToDraw, 0, textToDraw.length, killerSumBounds)
                     val cellWithSum = cage.labelCell()
@@ -506,8 +574,8 @@ fun Board(
                     drawKillerCage(
                         cage = cage,
                         cellSize = cellSize,
-                        strokeWidth = cageLineWidth,
-                        color = cageLineColor,
+                        strokeWidth = if (isSelectedCage) selectedCageLineWidth else cageLineWidth,
+                        color = if (isSelectedCage) selectedCageLineColor else cageLineColor,
                         labelRect = labelRect
                     )
                 }

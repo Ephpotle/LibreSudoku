@@ -101,7 +101,9 @@ fun DrawScope.drawNumbers(
     lockedTextPaint: Paint,
     textPaint: Paint,
     questions: Boolean,
-    cellSize: Float
+    cellSize: Float,
+    poppedCell: Pair<Int, Int>? = null,
+    poppedScale: Float = 1f
 ) {
     drawIntoCanvas { canvas ->
         for (i in 0 until size) {
@@ -119,12 +121,24 @@ fun DrawScope.drawNumbers(
                     textPaint.getTextBounds(textToDraw, 0, 1, textBounds)
                     val textWidth = paint.measureText(textToDraw)
 
+                    val popped = poppedScale != 1f && poppedCell != null &&
+                            poppedCell.first == i && poppedCell.second == j
+                    if (popped) {
+                        canvas.nativeCanvas.save()
+                        canvas.nativeCanvas.scale(
+                            poppedScale,
+                            poppedScale,
+                            (j + 0.5f) * cellSize,
+                            (i + 0.5f) * cellSize
+                        )
+                    }
                     canvas.nativeCanvas.drawText(
                         textToDraw,
                         board[i][j].col * cellSize + (cellSize - textWidth) / 2f,
                         board[i][j].row * cellSize + (cellSize + textBounds.height()) / 2f,
                         paint
                     )
+                    if (popped) canvas.nativeCanvas.restore()
                 }
             }
         }

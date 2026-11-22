@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -26,9 +27,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,10 +41,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +63,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -334,18 +343,27 @@ private fun GameScreenContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TopBoardSection(stringResource(uiState.gameDifficulty.resName))
+                    TopBoardSection(
+                        text = stringResource(uiState.gameDifficulty.resName),
+                        icon = Icons.Rounded.LocalFireDepartment
+                    )
                     if (settings.mistakesLimit && settings.mistakesMethod != 0) {
                         TopBoardSection(
-                            stringResource(
+                            text = stringResource(
                                 R.string.mistakes_number_out_of,
                                 uiState.mistakesCount,
                                 PreferencesConstants.MISTAKES_LIMIT
-                            )
+                            ),
+                            icon = Icons.Rounded.Close,
+                            emphasized = uiState.mistakesCount > 0
                         )
                     }
                     AnimatedVisibility(visible = settings.timerEnabled || uiState.endGame) {
-                        TopBoardSection(uiState.timeText)
+                        TopBoardSection(
+                            text = uiState.timeText,
+                            icon = Icons.Rounded.Timer,
+                            tabularDigits = true
+                        )
                     }
                 }
             }
@@ -523,7 +541,8 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
             remainingUses = uiState.remainingUsesList.takeIf { uiState.settings.remainingUse },
             onClick = { onEvent(GameUiEvent.NumberTapped(it)) },
             onLongClick = { onEvent(GameUiEvent.NumberTapped(it, longTap = true)) },
-            selected = uiState.digitFirstNumber
+            selected = uiState.digitFirstNumber,
+            notesMode = uiState.notesToggled
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -582,10 +601,52 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
     }
 }
 
+/**
+ * A small pill above the board for the level, mistakes and time.
+ * [tabularDigits] keeps a ticking timer from jiggling as its digits change.
+ */
 @Composable
-fun TopBoardSection(text: String, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        Text(text = text, modifier = Modifier.padding(horizontal = 4.dp))
+fun TopBoardSection(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    emphasized: Boolean = false,
+    tabularDigits: Boolean = false
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val containerColor by animateColorAsState(
+        targetValue = if (emphasized) colorScheme.errorContainer else colorScheme.surfaceColorAtElevation(3.dp),
+        label = "Info pill background"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (emphasized) colorScheme.onErrorContainer else colorScheme.onSurfaceVariant,
+        label = "Info pill content"
+    )
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = containerColor,
+        contentColor = contentColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge.let {
+                    if (tabularDigits) it.copy(fontFeatureSettings = "tnum") else it
+                }
+            )
+        }
     }
 }
 
