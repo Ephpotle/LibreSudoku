@@ -56,9 +56,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -228,6 +230,21 @@ private fun GameScreenBody(
     )
 
     // A short bounce of the board when the puzzle is solved
+    // the mistakes pill stays neutral and only turns red for a moment after a new mistake;
+    // a game loaded with earlier mistakes does not flash
+    var seenMistakes by remember { mutableStateOf<Int?>(null) }
+    var mistakeFlash by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.mistakesCount, uiState.isLoading) {
+        if (uiState.isLoading) return@LaunchedEffect
+        val seen = seenMistakes
+        seenMistakes = uiState.mistakesCount
+        if (seen != null && uiState.mistakesCount > seen) {
+            mistakeFlash = true
+            delay(1600)
+            mistakeFlash = false
+        }
+    }
+
     val winPulse = remember { Animatable(1f) }
     LaunchedEffect(celebration) {
         if (celebration > 0) {
@@ -341,9 +358,8 @@ private fun GameScreenBody(
                 .padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            // on tall phones most of the spare height goes above the board, which brings the
-            // board's top rows down into easier thumb reach instead of leaving a gap over the keys
-            Spacer(modifier = Modifier.weight(1f))
+            // the pills are a header under the app bar; the board is centred in the space between
+            // them and the keys, and on tall phones the keys grow, so no gap reads as missing content
             AnimatedVisibility(visible = !uiState.endGame) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -362,7 +378,7 @@ private fun GameScreenBody(
                                 PreferencesConstants.MISTAKES_LIMIT
                             ),
                             icon = Icons.Rounded.Close,
-                            emphasized = uiState.mistakesCount > 0
+                            emphasized = mistakeFlash
                         )
                     }
                     AnimatedVisibility(visible = settings.timerEnabled || uiState.endGame) {
@@ -375,6 +391,7 @@ private fun GameScreenBody(
                 }
             }
 
+            Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     AnimatedVisibility(
@@ -426,7 +443,7 @@ private fun GameScreenBody(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(0.4f))
+            Spacer(modifier = Modifier.weight(1f))
 
             AnimatedContent(uiState.advancedHintMode, label = "Advanced hint mode") { hintMode ->
                 if (hintMode) {
@@ -548,8 +565,8 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
     // tall screens have room to spare, so the number keys grow into bigger targets
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val keyMinHeight = when {
-        screenHeight >= 800 -> 72.dp
-        screenHeight >= 720 -> 64.dp
+        screenHeight >= 800 -> 80.dp
+        screenHeight >= 720 -> 68.dp
         else -> 0.dp
     }
     Column(
