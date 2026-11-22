@@ -67,6 +67,13 @@
   the app only compiles in GitHub Actions (the PR workflow builds a debug APK).
 - Markus's game results exist only on his phone. Sessions cannot read them.
 
+## UI conventions (from the design thread, PR #11, 2026-11-22; reported, not yet merged)
+
+- Labels above the board (hardness, solving style) use `TopBoardSection` in
+  GameScreen.kt: a CircleShape Surface on surfaceColorAtElevation(3.dp), optional 16dp
+  rounded icon, labelLarge text; `emphasized` switches to errorContainer. No new component.
+- Accent highlights use colorScheme.tertiary, apart from the primary-tinted cage lines.
+
 ## Rhythm
 
 Trial, chosen by Markus on 2026-11-22 (decision card). Work sessions daily at 10:13,
