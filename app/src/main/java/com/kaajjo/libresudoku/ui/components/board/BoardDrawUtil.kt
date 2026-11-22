@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import com.kaajjo.libresudoku.core.Cell
 import com.kaajjo.libresudoku.core.Note
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sqrt
 
@@ -88,6 +89,36 @@ fun DrawScope.drawNotes(
                 note.col * cellSize + cellSizeDivWidth / 2f + (cellSizeDivWidth * noteRow) - noteTextMeasure / 2f + horizontalPadding,
                 note.row * cellSize + noteBounds.height() * 1.5f + killerSumBounds.height() + (cellDivHeight * noteCol),
                 paint
+            )
+        }
+    }
+}
+
+/**
+ * Faint dots where notes will be written in an empty cell, shown while notes mode is on so the
+ * input mode can be seen on the board itself. [topInset] leaves room for a killer cage sum.
+ */
+fun DrawScope.drawNotesCursor(
+    row: Int,
+    col: Int,
+    gameSize: Int,
+    cellSize: Float,
+    topInset: Float,
+    color: Color
+) {
+    val columns = ceil(sqrt(gameSize.toFloat())).toInt()
+    val rows = floor(sqrt(gameSize.toFloat())).toInt()
+    val left = col * cellSize
+    val top = row * cellSize + topInset
+    val stepX = cellSize / columns
+    val stepY = (cellSize - topInset) / rows
+    val radius = cellSize * 0.028f
+    for (r in 0 until rows) {
+        for (c in 0 until columns) {
+            drawCircle(
+                color = color,
+                radius = radius,
+                center = Offset(left + stepX * (c + 0.5f), top + stepY * (r + 0.5f))
             )
         }
     }

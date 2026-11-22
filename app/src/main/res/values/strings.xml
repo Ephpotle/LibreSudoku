@@ -294,6 +294,11 @@
     <string name="pref_date_format_custom_label">Custom</string>
     <string name="theme_blue">Blue</string>
     <string name="redo">Redo</string>
+    <string name="toolbar_undo">Undo</string>
+    <string name="toolbar_hint">Hint</string>
+    <string name="toolbar_notes">Notes</string>
+    <string name="toolbar_erase">Erase</string>
+    <string name="toolbar_explain">Explain</string>
     <string name="backup_restore_title">Backup &amp; restore</string>
     <string name="action_create_backup">Backup</string>
     <string name="create_backup_description">Create backup file</string>

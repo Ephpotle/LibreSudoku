@@ -52,7 +52,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -121,7 +120,6 @@ fun GameScreen(
     val localView = LocalView.current
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
-    var restartButtonAngle by remember { mutableFloatStateOf(0f) }
     var celebration by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(viewModel, lifecycleOwner, navigator, clipboardManager, context, localView) {
@@ -149,7 +147,7 @@ fun GameScreen(
                     GameUiSideEffect.HapticFeedback -> {
                         localView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     }
-                    GameUiSideEffect.GameRestarted -> restartButtonAngle -= 360f
+                    GameUiSideEffect.GameRestarted -> Unit
                     is GameUiSideEffect.GameWon -> {
                         celebration++
                         if (effect.playSound) playWinChime(context)
@@ -186,7 +184,6 @@ fun GameScreen(
         GameScreenContent(
             uiState = uiState,
             onEvent = viewModel::sendEvent,
-            restartButtonAngle = restartButtonAngle,
             celebration = celebration
         )
         WinConfetti(trigger = celebration, modifier = Modifier.fillMaxSize())
@@ -198,7 +195,6 @@ fun GameScreen(
 private fun GameScreenContent(
     uiState: GameUiState,
     onEvent: (GameUiEvent) -> Unit,
-    restartButtonAngle: Float,
     celebration: Int = 0
 ) {
     val settings = uiState.settings
@@ -206,11 +202,6 @@ private fun GameScreenContent(
     val fontSize = remember(settings.fontSize, uiState.gameType) {
         sudokuUtils.getFontSize(uiState.gameType, settings.fontSize)
     }
-    val restartButtonAnimation by animateFloatAsState(
-        targetValue = restartButtonAngle,
-        animationSpec = tween(durationMillis = 250),
-        label = "restartButtonAnimation"
-    )
     val boardBlur by animateDpAsState(
         targetValue = if (uiState.gamePlaying || uiState.endGame) 0.dp else 10.dp,
         label = "Game board blur"
@@ -282,15 +273,6 @@ private fun GameScreenContent(
                             }
                         }
                         AnimatedVisibility(visible = !uiState.endGame) {
-                            IconButton(onClick = { onEvent(GameUiEvent.ShowRestartDialog) }) {
-                                Icon(
-                                    modifier = Modifier.rotate(restartButtonAnimation),
-                                    painter = painterResource(R.drawable.ic_round_replay_24),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                        AnimatedVisibility(visible = !uiState.endGame) {
                             Box {
                                 IconButton(onClick = {
                                     onEvent(GameUiEvent.SetMenuVisible(!uiState.showMenu))
@@ -301,6 +283,7 @@ private fun GameScreenContent(
                                     expanded = uiState.showMenu,
                                     onDismiss = { onEvent(GameUiEvent.SetMenuVisible(false)) },
                                     onGiveUpClick = { onEvent(GameUiEvent.ShowGiveUpDialog) },
+                                    onRestartClick = { onEvent(GameUiEvent.ShowRestartDialog) },
                                     onSettingsClick = { onEvent(GameUiEvent.OpenSettings) },
                                     onExportClick = { onEvent(GameUiEvent.ExportBoard) }
                                 )
@@ -334,7 +317,7 @@ private fun GameScreenContent(
         }
 
         Column(
-            modifier = Modifier.padding(scaffoldPaddings).padding(horizontal = 12.dp),
+            modifier = Modifier.padding(scaffoldPaddings).padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             AnimatedVisibility(visible = !uiState.endGame) {
@@ -410,6 +393,7 @@ private fun GameScreenContent(
                     zoomable = uiState.gameType == GameType.Default12x12 || uiState.gameType == GameType.Killer12x12,
                     crossHighlight = settings.crossHighlight,
                     cages = uiState.cages,
+                    notesMode = uiState.notesToggled,
                     cellsToHighlight = uiState.advancedHintData
                         ?.takeIf { uiState.advancedHintMode }
                         ?.let { it.helpCells + it.targetCell }
@@ -556,6 +540,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 )
                 ToolbarItem(
                     painter = painterResource(R.drawable.ic_round_undo_24),
+                    label = stringResource(R.string.toolbar_undo),
                     onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Undo)) },
                     onLongClick = { onEvent(GameUiEvent.SetUndoRedoMenuVisible(true)) }
                 )
@@ -564,6 +549,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 ToolbarItem(
                     modifier = Modifier.weight(1f),
                     painter = painterResource(R.drawable.ic_lightbulb_stars_24),
+                    label = stringResource(R.string.toolbar_hint),
                     onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint)) }
                 )
             }
@@ -578,6 +564,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 )
                 ToolbarItem(
                     painter = painterResource(R.drawable.ic_round_edit_24),
+                    label = stringResource(R.string.toolbar_notes),
                     toggled = uiState.notesToggled,
                     onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Note)) },
                     onLongClick = { onEvent(GameUiEvent.SetNotesMenuVisible(true)) }
@@ -586,6 +573,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
             ToolbarItem(
                 modifier = Modifier.weight(1f),
                 painter = painterResource(R.drawable.ic_eraser_24),
+                label = stringResource(R.string.toolbar_erase),
                 toggled = uiState.eraseButtonToggled,
                 onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Remove)) },
                 onLongClick = { onEvent(GameUiEvent.ToggleEraseMode) }
@@ -594,6 +582,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 ToolbarItem(
                     modifier = Modifier.weight(1f),
                     painter = rememberVectorPainter(Icons.Rounded.AutoAwesome),
+                    label = stringResource(R.string.toolbar_explain),
                     onClick = { onEvent(GameUiEvent.RequestAdvancedHint) }
                 )
             }

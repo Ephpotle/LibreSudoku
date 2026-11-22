@@ -32,12 +32,18 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kaajjo.libresudoku.R
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.ui.theme.LibreSudokuTheme
 import com.kaajjo.libresudoku.ui.util.LightDarkPreview
+
+/** The serif used for placed digits on the board, so keys and board speak the same "ink" */
+val InkFontFamily = FontFamily(Font(R.font.ink_digits))
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -93,7 +99,10 @@ fun KeyboardItem(
             .combinedClickable(
                 interactionSource = mutableInteractionSource,
                 onClick = {
-                    localView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    // ink gets a firm click, pencil a light tick
+                    localView.performHapticFeedback(
+                        if (notesMode) HapticFeedbackConstants.CLOCK_TICK else HapticFeedbackConstants.VIRTUAL_KEY
+                    )
                     onClick(number)
                 },
                 onLongClick = {
@@ -114,7 +123,9 @@ fun KeyboardItem(
         ) {
             Text(
                 text = number.toString(16).uppercase(),
-                fontWeight = if (notesMode) FontWeight.Medium else FontWeight.Bold,
+                // ink serif for digits, plain sans "pencil" in notes mode
+                fontFamily = if (notesMode) FontFamily.Default else InkFontFamily,
+                fontWeight = if (notesMode) FontWeight.Medium else FontWeight.Normal,
                 fontSize = keyboardFontSize.sp,
                 lineHeight = fullFontSize.sp,
                 color = textColor
