@@ -20,6 +20,7 @@ fun GameMenu(
     expanded: Boolean,
     onDismiss: () -> Unit,
     onGiveUpClick: () -> Unit,
+    onRestartClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onExportClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -30,6 +31,13 @@ fun GameMenu(
             expanded = expanded,
             onDismissRequest = onDismiss
         ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_reset_game)) },
+                onClick = {
+                    onRestartClick()
+                    onDismiss()
+                }
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.action_give_up)) },
                 onClick = {

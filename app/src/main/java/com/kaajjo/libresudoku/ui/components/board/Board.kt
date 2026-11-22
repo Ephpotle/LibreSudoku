@@ -2,6 +2,10 @@ package com.kaajjo.libresudoku.ui.components.board
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -27,6 +31,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -38,7 +43,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.res.ResourcesCompat
 import com.kaajjo.libresudoku.LocalBoardColors
+import com.kaajjo.libresudoku.R
+import com.kaajjo.libresudoku.ui.theme.Paper
 import com.kaajjo.libresudoku.core.Cell
 import com.kaajjo.libresudoku.core.Note
 import com.kaajjo.libresudoku.core.qqwing.Cage
@@ -49,6 +57,7 @@ import com.kaajjo.libresudoku.ui.theme.LibreSudokuTheme
 import com.kaajjo.libresudoku.ui.theme.SudokuBoardColors
 import com.kaajjo.libresudoku.ui.theme.SudokuBoardColorsImpl
 import com.kaajjo.libresudoku.ui.util.LightDarkPreview
+import kotlinx.coroutines.launch
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sqrt
@@ -77,6 +86,7 @@ import kotlin.math.sqrt
  * @param boardColors colors of the board (see [BoardColors])
  * @param crossHighlight highlight some boxes on the board
  * @param cages a list of [Cage] for killer sudoku
+ * @param notesMode whether input currently makes notes; an empty selected cell then shows where they go
  */
 @Composable
 fun Board(
@@ -111,7 +121,8 @@ fun Board(
     zoomable: Boolean = false,
     boardColors: SudokuBoardColors = LocalBoardColors.current,
     crossHighlight: Boolean = false,
-    cages: List<Cage> = emptyList()
+    cages: List<Cage> = emptyList(),
+    notesMode: Boolean = false
 ) {
     BoxWithConstraints(
         modifier = modifier
@@ -129,10 +140,21 @@ fun Board(
         val errorColor = boardColors.errorColor
         val foregroundColor = boardColors.foregroundColor
         val thickLineColor = boardColors.thickLineColor
-        val thinLineColor = boardColors.thinLineColor
         // locked numbers
         val altForegroundColor = boardColors.altForegroundColor
-        val notesColor = boardColors.notesColor
+
+        // Killer boards are drawn like a page in a puzzle book: warm paper, the puzzle's
+        // structure (box lines, cages, sums) printed in graphite, notes in pencil, and only the
+        // player's digits in the theme's coloured ink. Paper and print stay the same on every
+        // phone; the ink follows the wallpaper colours.
+        val isKiller = cages.isNotEmpty()
+        val colorScheme = MaterialTheme.colorScheme
+        val isDarkBoard = colorScheme.surface.luminance() < 0.5f
+        val paperColor = if (isDarkBoard) Paper.Dark else Paper.Light
+        val printColor = if (isDarkBoard) Paper.PrintDark else Paper.PrintLight
+        val thinLineColor = if (isKiller) printColor.copy(alpha = 0.16f) else boardColors.thinLineColor
+        val notesColor = if (isKiller) printColor.copy(alpha = 0.72f) else boardColors.notesColor
+        val sumColor = if (isKiller) printColor else foregroundColor
 
         // highlight (cells)
         val highlightColor = boardColors.highlightColor
@@ -153,28 +175,103 @@ fun Board(
         val noteSizePx = with(LocalDensity.current) { (cellSizeDivWidth * 0.8f).toSp().toPx() }
         val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.2f }
 
-        val isKiller = cages.isNotEmpty()
         val thinLineWidth = with(LocalDensity.current) { 1.3.dp.toPx() }
         // killer boards need box borders that clearly differ from the cage outlines,
         // so they are thicker and drawn in the full number colour
         val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 2.4.dp else 1.3.dp).toPx() }
-        val boxLineColor = if (isKiller) foregroundColor else thickLineColor
-        val cageLineWidth = with(LocalDensity.current) { 1.6.dp.toPx() }
-        val cageLineColor = foregroundColor.copy(alpha = 0.9f)
+        // box lines are the heaviest print on the page; cage outlines are thinner and lighter
+        val boxLineColor = if (isKiller) printColor else thickLineColor
+        val cageLineWidth = with(LocalDensity.current) { 1.4.dp.toPx() }
+        val cageLineColor = printColor.copy(alpha = 0.78f)
 
-        val colorScheme = MaterialTheme.colorScheme
-        val cageTintAlpha = if (colorScheme.surface.luminance() < 0.5f) 0.16f else 0.10f
-        val cageTints = remember(colorScheme, cageTintAlpha) {
-            listOf(
-                colorScheme.primary.copy(alpha = cageTintAlpha),
-                colorScheme.tertiary.copy(alpha = cageTintAlpha),
-                colorScheme.onSurfaceVariant.copy(alpha = cageTintAlpha * 0.8f),
-                Color.Transparent
-            )
+        // neighbouring cages get slightly different shades of graphite wash, never colours,
+        // so the shapes read without adding meaning-free colour noise
+        val cageTints = remember(printColor) {
+            listOf(0.025f, 0.05f, 0.075f, 0.1f).map { printColor.copy(alpha = it) }
         }
         val cageTintIndex = remember(cages) { cageTintIndices(cages, cageTints.size) }
 
+        // the cage of the selected cell is outlined more strongly, so its shape is easy to follow
+        val selectedCageIndex = remember(cages, selectedCell.row, selectedCell.col) {
+            cages.indexOfFirst { cage ->
+                cage.cells.any { it.row == selectedCell.row && it.col == selectedCell.col }
+            }
+        }
+        // The selected cage is outlined in ink with a light ink wash; the selected cell inside
+        // it gets a stronger wash and a ring, so the cell never gets lost in its cage.
+        // (Tertiary was tried first, but in many palettes it is a rose close to the mistake colour.)
+        val inkColor = foregroundColor
+        val selectedCageLineWidth = with(LocalDensity.current) { 2.2.dp.toPx() }
+        val selectedCageLineColor = inkColor
+        val selectedCageTint = inkColor.copy(alpha = if (isDarkBoard) 0.10f else 0.07f)
+        val selectedCellFill = inkColor.copy(alpha = if (isDarkBoard) 0.22f else 0.15f)
+        val selectedCellRingWidth = with(LocalDensity.current) { 2.dp.toPx() }
+        val selectedCellRingInset = with(LocalDensity.current) { 3.dp.toPx() }
+
+        // The selection glides from cell to cell instead of jumping
+        val selectionPosition = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+        var selectionVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(selectedCell.row, selectedCell.col) {
+            if (selectedCell.row < 0 || selectedCell.col < 0) {
+                selectionVisible = false
+                return@LaunchedEffect
+            }
+            val target = Offset(selectedCell.col.toFloat(), selectedCell.row.toFloat())
+            if (!selectionVisible) {
+                selectionPosition.snapTo(target)
+                selectionVisible = true
+            } else {
+                selectionPosition.animateTo(
+                    target,
+                    spring(dampingRatio = 0.85f, stiffness = 1500f)
+                )
+            }
+        }
+
+        // Placed digits are "ink": a bundled serif (DM Serif Text, OFL), while notes stay in the
+        // plain system sans like pencil marks
+        val inkContext = LocalContext.current
+        val inkTypeface = remember(inkContext) {
+            runCatching { ResourcesCompat.getFont(inkContext, R.font.ink_digits) }.getOrNull()
+                ?: Typeface.DEFAULT
+        }
+
+        // A digit that was just placed pops in with a small bounce and a faint ink spread
+        val inkSpread = remember { Animatable(1f) }
+        val placedScale = remember { Animatable(1f) }
+        var placedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+        val previousValues = remember { arrayOfNulls<IntArray>(1) }
+        LaunchedEffect(board) {
+            val values = IntArray(size * size) { board[it / size][it % size].value }
+            val previous = previousValues[0]
+            previousValues[0] = values
+            if (previous == null || previous.size != values.size) return@LaunchedEffect
+            val changed = values.indices.filter { values[it] != previous[it] }
+            if (changed.size == 1 && values[changed[0]] != 0) {
+                placedCell = changed[0] / size to changed[0] % size
+                launch {
+                    inkSpread.snapTo(0f)
+                    inkSpread.animateTo(1f, tween(durationMillis = 260))
+                }
+                placedScale.snapTo(0.55f)
+                placedScale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 700f))
+            }
+        }
+
         val killerSumBounds by remember { mutableStateOf(android.graphics.Rect()) }
+
+        // Cages whose cells are all filled settle into a quieter style. This says "filled",
+        // never "correct", which the player can already see on the board.
+        val filledCages = remember(board, cages) {
+            cages.map { cage ->
+                cage.cells.all { cell ->
+                    (board.getOrNull(cell.row)?.getOrNull(cell.col)?.value ?: 0) != 0
+                }
+            }
+        }
+        val settledCageLineColor = printColor.copy(alpha = 0.15f)
+        // cells that carry a cage sum; only these give up room for it
+        val sumCells = remember(cages) { cages.map { it.labelCell().let { c -> c.row to c.col } }.toSet() }
 
         // paints
         // numbers
@@ -183,7 +280,8 @@ fun Board(
                 Paint().apply {
                     color = foregroundColor.toArgb()
                     isAntiAlias = true
-                    textSize = fontSizePx
+                    textSize = fontSizePx * INK_SIZE_FACTOR
+                    typeface = inkTypeface
                 }
             )
         }
@@ -193,7 +291,8 @@ fun Board(
                 Paint().apply {
                     color = errorColor.toArgb()
                     isAntiAlias = true
-                    textSize = fontSizePx
+                    textSize = fontSizePx * INK_SIZE_FACTOR
+                    typeface = inkTypeface
                 }
             )
         }
@@ -203,7 +302,8 @@ fun Board(
                 Paint().apply {
                     color = altForegroundColor.toArgb()
                     isAntiAlias = true
-                    textSize = fontSizePx
+                    textSize = fontSizePx * INK_SIZE_FACTOR
+                    typeface = inkTypeface
                 }
             )
         }
@@ -231,7 +331,7 @@ fun Board(
         var killerSumPaint by remember {
             mutableStateOf(
                 Paint().apply {
-                    color = foregroundColor.toArgb()
+                    color = sumColor.toArgb()
                     isAntiAlias = true
                     textSize = killerSumSizePx
                     typeface = Typeface.DEFAULT_BOLD
@@ -244,7 +344,8 @@ fun Board(
             textPaint = Paint().apply {
                 color = foregroundColor.toArgb()
                 isAntiAlias = true
-                textSize = fontSizePx
+                textSize = fontSizePx * INK_SIZE_FACTOR
+                typeface = inkTypeface
             }
             notePaint = Paint().apply {
                 color = notesColor.toArgb()
@@ -254,15 +355,17 @@ fun Board(
             errorTextPaint = Paint().apply {
                 color = Color(230, 67, 83).toArgb()
                 isAntiAlias = true
-                textSize = fontSizePx
+                textSize = fontSizePx * INK_SIZE_FACTOR
+                typeface = inkTypeface
             }
             lockedTextPaint = Paint().apply {
                 color = altForegroundColor.toArgb()
                 isAntiAlias = true
-                textSize = fontSizePx
+                textSize = fontSizePx * INK_SIZE_FACTOR
+                typeface = inkTypeface
             }
             killerSumPaint = Paint().apply {
-                color = foregroundColor.toArgb()
+                color = sumColor.toArgb()
                 isAntiAlias = true
                 textSize = killerSumSizePx
                 typeface = Typeface.DEFAULT_BOLD
@@ -291,8 +394,8 @@ fun Board(
                     onLongPress = {
                         if (enabled) {
                             val totalOffset = it / zoom + offset
-                            val row = floor((totalOffset.y) / cellSize).toInt()
-                            val column = floor((totalOffset.x) / cellSize).toInt()
+                            val row = floor((totalOffset.y) / cellSize).toInt().coerceIn(board.indices)
+                            val column = floor((totalOffset.x) / cellSize).toInt().coerceIn(board.indices)
                             onLongClick(board[row][column])
                         }
                     }
@@ -337,31 +440,64 @@ fun Board(
         ) {
             val cornerRadius = CornerRadius(15f, 15f)
 
-            // cage tints go first so selection and highlights stay visible on top of them
+            if (isKiller) {
+                drawRoundRect(color = paperColor, cornerRadius = cornerRadius)
+            }
+            // cage tints go first so selection and highlights stay visible on top of them;
+            // a filled cage loses its wash, so the solved part of the page goes quiet
             cages.forEachIndexed { index, cage ->
+                if (!filledCages.getOrElse(index) { false }) {
+                    drawKillerCageTint(
+                        cage = cage,
+                        cellSize = cellSize,
+                        color = cageTints[cageTintIndex[index]]
+                    )
+                }
+            }
+            if (selectedCageIndex >= 0) {
                 drawKillerCageTint(
-                    cage = cage,
+                    cage = cages[selectedCageIndex],
                     cellSize = cellSize,
-                    color = cageTints[cageTintIndex[index]]
+                    color = selectedCageTint
                 )
             }
 
             if (selectedCell.row >= 0 && selectedCell.col >= 0) {
-                // current cell
+                // current cell, drawn where the gliding selection currently is
+                val selection = if (selectionVisible) {
+                    selectionPosition.value
+                } else {
+                    Offset(selectedCell.col.toFloat(), selectedCell.row.toFloat())
+                }
                 drawRoundCell(
                     row = selectedCell.row,
                     col = selectedCell.col,
                     gameSize = size,
                     rect = Rect(
                         offset = Offset(
-                            x = selectedCell.col * cellSize,
-                            y = selectedCell.row * cellSize
+                            x = selection.x * cellSize,
+                            y = selection.y * cellSize
                         ),
                         size = Size(cellSize, cellSize)
                     ),
-                    color = highlightColor.copy(alpha = 0.2f),
+                    color = if (isKiller) selectedCellFill else highlightColor.copy(alpha = 0.2f),
                     cornerRadius = cornerRadius
                 )
+                if (isKiller) {
+                    drawRoundRect(
+                        color = inkColor,
+                        topLeft = Offset(
+                            selection.x * cellSize + selectedCellRingInset,
+                            selection.y * cellSize + selectedCellRingInset
+                        ),
+                        size = Size(
+                            cellSize - 2 * selectedCellRingInset,
+                            cellSize - 2 * selectedCellRingInset
+                        ),
+                        cornerRadius = CornerRadius(cellSize * 0.12f),
+                        style = Stroke(width = selectedCellRingWidth)
+                    )
+                }
                 if (positionLines) {
                     drawPositionLines(
                         row = selectedCell.row,
@@ -443,6 +579,35 @@ fun Board(
                 }
             }
 
+            placedCell?.let { (row, col) ->
+                if (inkSpread.value < 1f && row < size && col < size) {
+                    drawCircle(
+                        color = foregroundColor.copy(alpha = 0.16f * (1f - inkSpread.value)),
+                        radius = cellSize * (0.22f + 0.26f * inkSpread.value),
+                        center = Offset((col + 0.5f) * cellSize, (row + 0.5f) * cellSize)
+                    )
+                }
+            }
+
+            // measure the sum label height up front, so notes and the notes cursor know where to start
+            if (isKiller) killerSumPaint.getTextBounds("0", 0, 1, killerSumBounds)
+
+            if (notesMode && selectedCell.row in 0 until size && selectedCell.col in 0 until size &&
+                board[selectedCell.row][selectedCell.col].value == 0
+            ) {
+                drawNotesCursor(
+                    row = selectedCell.row,
+                    col = selectedCell.col,
+                    gameSize = size,
+                    cellSize = cellSize,
+                    topInset = notesTopInset(
+                        cellSize,
+                        if ((selectedCell.row to selectedCell.col) in sumCells) killerSumBounds.height().toFloat() else 0f
+                    ),
+                    color = notesColor.copy(alpha = 0.85f)
+                )
+            }
+
             drawNumbers(
                 size = size,
                 board = board,
@@ -451,7 +616,9 @@ fun Board(
                 lockedTextPaint = lockedTextPaint,
                 textPaint = textPaint,
                 questions = questions,
-                cellSize = cellSize
+                cellSize = cellSize,
+                poppedCell = placedCell,
+                poppedScale = placedScale.value
             )
 
             if (!notes.isNullOrEmpty() && !questions && renderNotes) {
@@ -463,7 +630,8 @@ fun Board(
                     notesToHighlight = notesToHighlight,
                     cellSize = cellSize,
                     cellSizeDivWidth = cellSizeDivWidth,
-                    killerSumBounds = killerSumBounds
+                    killerSumBounds = killerSumBounds,
+                    sumCells = sumCells
                 )
             }
 
@@ -480,7 +648,10 @@ fun Board(
 
             if (cages.isNotEmpty()) {
                 val labelPadding = cellSize * 0.06f
-                cages.forEach { cage ->
+                val settledSumPaint = Paint(killerSumPaint).apply { alpha = 110 }
+                cages.forEachIndexed { index, cage ->
+                    val isSelectedCage = index == selectedCageIndex
+                    val isSettled = !isSelectedCage && filledCages.getOrElse(index) { false }
                     val textToDraw = if (questions) "?" else cage.sum.toString()
                     killerSumPaint.getTextBounds(textToDraw, 0, textToDraw.length, killerSumBounds)
                     val cellWithSum = cage.labelCell()
@@ -499,15 +670,19 @@ fun Board(
                             textToDraw,
                             labelRect.left,
                             labelRect.bottom,
-                            killerSumPaint
+                            if (isSettled) settledSumPaint else killerSumPaint
                         )
                     }
 
                     drawKillerCage(
                         cage = cage,
                         cellSize = cellSize,
-                        strokeWidth = cageLineWidth,
-                        color = cageLineColor,
+                        strokeWidth = if (isSelectedCage) selectedCageLineWidth else cageLineWidth,
+                        color = when {
+                            isSelectedCage -> selectedCageLineColor
+                            isSettled -> settledCageLineColor
+                            else -> cageLineColor
+                        },
                         labelRect = labelRect
                     )
                 }
@@ -551,3 +726,6 @@ private fun BoardPreviewLight() {
         }
     }
 }
+
+/** Placed digits are set a little smaller than the old sans: the serif's figures run larger */
+private const val INK_SIZE_FACTOR = 0.8f

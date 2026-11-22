@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -22,13 +23,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,15 +42,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -55,6 +63,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -72,6 +81,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import com.kaajjo.libresudoku.R
+import com.kaajjo.libresudoku.ui.theme.PaperTheme
 import com.kaajjo.libresudoku.core.Cell
 import com.kaajjo.libresudoku.core.PreferencesConstants
 import com.kaajjo.libresudoku.core.qqwing.GameType
@@ -112,7 +122,6 @@ fun GameScreen(
     val localView = LocalView.current
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
-    var restartButtonAngle by remember { mutableFloatStateOf(0f) }
     var celebration by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(viewModel, lifecycleOwner, navigator, clipboardManager, context, localView) {
@@ -140,7 +149,7 @@ fun GameScreen(
                     GameUiSideEffect.HapticFeedback -> {
                         localView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     }
-                    GameUiSideEffect.GameRestarted -> restartButtonAngle -= 360f
+                    GameUiSideEffect.GameRestarted -> Unit
                     is GameUiSideEffect.GameWon -> {
                         celebration++
                         if (effect.playSound) playWinChime(context)
@@ -177,31 +186,36 @@ fun GameScreen(
         GameScreenContent(
             uiState = uiState,
             onEvent = viewModel::sendEvent,
-            restartButtonAngle = restartButtonAngle,
             celebration = celebration
         )
         WinConfetti(trigger = celebration, modifier = Modifier.fillMaxSize())
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GameScreenContent(
+internal fun GameScreenContent(
     uiState: GameUiState,
     onEvent: (GameUiEvent) -> Unit,
-    restartButtonAngle: Float,
     celebration: Int = 0
+) {
+    // a killer puzzle is set on a printed page: the screen around the board takes its paper
+    PaperTheme(enabled = uiState.cages.isNotEmpty()) {
+        GameScreenBody(uiState, onEvent, celebration)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GameScreenBody(
+    uiState: GameUiState,
+    onEvent: (GameUiEvent) -> Unit,
+    celebration: Int
 ) {
     val settings = uiState.settings
     val sudokuUtils = remember { SudokuUtils() }
     val fontSize = remember(settings.fontSize, uiState.gameType) {
         sudokuUtils.getFontSize(uiState.gameType, settings.fontSize)
     }
-    val restartButtonAnimation by animateFloatAsState(
-        targetValue = restartButtonAngle,
-        animationSpec = tween(durationMillis = 250),
-        label = "restartButtonAnimation"
-    )
     val boardBlur by animateDpAsState(
         targetValue = if (uiState.gamePlaying || uiState.endGame) 0.dp else 10.dp,
         label = "Game board blur"
@@ -273,15 +287,6 @@ private fun GameScreenContent(
                             }
                         }
                         AnimatedVisibility(visible = !uiState.endGame) {
-                            IconButton(onClick = { onEvent(GameUiEvent.ShowRestartDialog) }) {
-                                Icon(
-                                    modifier = Modifier.rotate(restartButtonAnimation),
-                                    painter = painterResource(R.drawable.ic_round_replay_24),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                        AnimatedVisibility(visible = !uiState.endGame) {
                             Box {
                                 IconButton(onClick = {
                                     onEvent(GameUiEvent.SetMenuVisible(!uiState.showMenu))
@@ -292,6 +297,7 @@ private fun GameScreenContent(
                                     expanded = uiState.showMenu,
                                     onDismiss = { onEvent(GameUiEvent.SetMenuVisible(false)) },
                                     onGiveUpClick = { onEvent(GameUiEvent.ShowGiveUpDialog) },
+                                    onRestartClick = { onEvent(GameUiEvent.ShowRestartDialog) },
                                     onSettingsClick = { onEvent(GameUiEvent.OpenSettings) },
                                     onExportClick = { onEvent(GameUiEvent.ExportBoard) }
                                 )
@@ -325,27 +331,44 @@ private fun GameScreenContent(
         }
 
         Column(
-            modifier = Modifier.padding(scaffoldPaddings).padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.SpaceEvenly
+            // level, time and board sit right under the app bar; the controls sit at the
+            // bottom in thumb reach, and any spare height goes between the two
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(scaffoldPaddings)
+                .padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.Top
         ) {
+            // spare height is shared above and below the level, time and board, more of it below,
+            // so they sit near the middle and the controls stay in thumb reach
+            Spacer(modifier = Modifier.weight(0.6f))
             AnimatedVisibility(visible = !uiState.endGame) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TopBoardSection(stringResource(uiState.gameDifficulty.resName))
+                    TopBoardSection(
+                        text = stringResource(uiState.gameDifficulty.resName),
+                        icon = Icons.Rounded.LocalFireDepartment
+                    )
                     if (settings.mistakesLimit && settings.mistakesMethod != 0) {
                         TopBoardSection(
-                            stringResource(
+                            text = stringResource(
                                 R.string.mistakes_number_out_of,
                                 uiState.mistakesCount,
                                 PreferencesConstants.MISTAKES_LIMIT
-                            )
+                            ),
+                            icon = Icons.Rounded.Close,
+                            emphasized = uiState.mistakesCount > 0
                         )
                     }
                     AnimatedVisibility(visible = settings.timerEnabled || uiState.endGame) {
-                        TopBoardSection(uiState.timeText)
+                        TopBoardSection(
+                            text = uiState.timeText,
+                            icon = Icons.Rounded.Timer,
+                            tabularDigits = true
+                        )
                     }
                 }
             }
@@ -380,7 +403,9 @@ private fun GameScreenContent(
                     },
                     identicalNumbersHighlight = settings.identicalHighlight,
                     errorsHighlight = settings.mistakesMethod != 0,
-                    positionLines = settings.positionLines,
+                    // on killer boards the selected cage's highlight replaces the row and column
+                    // bands, which would otherwise stack on the same cells
+                    positionLines = settings.positionLines && uiState.cages.isEmpty(),
                     notesToHighlight = if (uiState.digitFirstNumber > 0) {
                         uiState.notes.filter { it.value == uiState.digitFirstNumber }
                     } else {
@@ -392,11 +417,14 @@ private fun GameScreenContent(
                     zoomable = uiState.gameType == GameType.Default12x12 || uiState.gameType == GameType.Killer12x12,
                     crossHighlight = settings.crossHighlight,
                     cages = uiState.cages,
+                    notesMode = uiState.notesToggled,
                     cellsToHighlight = uiState.advancedHintData
                         ?.takeIf { uiState.advancedHintMode }
                         ?.let { it.helpCells + it.targetCell }
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             AnimatedContent(uiState.advancedHintMode, label = "Advanced hint mode") { hintMode ->
                 if (hintMode) {
@@ -523,7 +551,8 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
             remainingUses = uiState.remainingUsesList.takeIf { uiState.settings.remainingUse },
             onClick = { onEvent(GameUiEvent.NumberTapped(it)) },
             onLongClick = { onEvent(GameUiEvent.NumberTapped(it, longTap = true)) },
-            selected = uiState.digitFirstNumber
+            selected = uiState.digitFirstNumber,
+            notesMode = uiState.notesToggled
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -537,6 +566,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 )
                 ToolbarItem(
                     painter = painterResource(R.drawable.ic_round_undo_24),
+                    label = stringResource(R.string.toolbar_undo),
                     onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Undo)) },
                     onLongClick = { onEvent(GameUiEvent.SetUndoRedoMenuVisible(true)) }
                 )
@@ -545,6 +575,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 ToolbarItem(
                     modifier = Modifier.weight(1f),
                     painter = painterResource(R.drawable.ic_lightbulb_stars_24),
+                    label = stringResource(R.string.toolbar_hint),
                     onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint)) }
                 )
             }
@@ -559,6 +590,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 )
                 ToolbarItem(
                     painter = painterResource(R.drawable.ic_round_edit_24),
+                    label = stringResource(R.string.toolbar_notes),
                     toggled = uiState.notesToggled,
                     onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Note)) },
                     onLongClick = { onEvent(GameUiEvent.SetNotesMenuVisible(true)) }
@@ -567,6 +599,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
             ToolbarItem(
                 modifier = Modifier.weight(1f),
                 painter = painterResource(R.drawable.ic_eraser_24),
+                label = stringResource(R.string.toolbar_erase),
                 toggled = uiState.eraseButtonToggled,
                 onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Remove)) },
                 onLongClick = { onEvent(GameUiEvent.ToggleEraseMode) }
@@ -575,6 +608,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                 ToolbarItem(
                     modifier = Modifier.weight(1f),
                     painter = rememberVectorPainter(Icons.Rounded.AutoAwesome),
+                    label = stringResource(R.string.toolbar_explain),
                     onClick = { onEvent(GameUiEvent.RequestAdvancedHint) }
                 )
             }
@@ -582,10 +616,53 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
     }
 }
 
+/**
+ * A small pill above the board for the level, mistakes and time.
+ * [tabularDigits] keeps a ticking timer from jiggling as its digits change.
+ */
 @Composable
-fun TopBoardSection(text: String, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        Text(text = text, modifier = Modifier.padding(horizontal = 4.dp))
+fun TopBoardSection(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    emphasized: Boolean = false,
+    tabularDigits: Boolean = false
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val containerColor by animateColorAsState(
+        targetValue = colorScheme.surfaceColorAtElevation(3.dp),
+        label = "Info pill background"
+    )
+    val contentColor by animateColorAsState(
+        // a counted mistake tints the text, not the whole pill, so it informs without shouting
+        targetValue = if (emphasized) colorScheme.error else colorScheme.onSurfaceVariant,
+        label = "Info pill content"
+    )
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = containerColor,
+        contentColor = contentColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge.let {
+                    if (tabularDigits) it.copy(fontFeatureSettings = "tnum") else it
+                }
+            )
+        }
     }
 }
 

@@ -56,6 +56,22 @@ android {
         }
     }
 
+    testOptions {
+        // Robolectric tests (including the opt-in screenshot test) read app resources such as fonts
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Robolectric downloads its Android jar at test time; Maven Central often refuses
+            // CI runners, so fetch it from Google's mirror of Maven Central instead
+            test.systemProperty(
+                "robolectric.dependency.repo.url",
+                "https://maven-central.storage-download.googleapis.com/maven2"
+            )
+            // the screenshot test needs its own Android jar, so it only runs when asked for
+            if (System.getenv("SCREENSHOT_DIR") == null) {
+                test.exclude("**/GameScreenshotTest*")
+            }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -103,6 +119,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.test.core)
     testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation(libs.ui.test.junit4)
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation("androidx.test:runner:1.6.2")
