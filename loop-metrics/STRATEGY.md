@@ -1,20 +1,20 @@
 # Strategy
 
-**Status: draft, not approved.** North star and term readings sent to Markus
-2026-11-22; data stance decided the same day (on the phone first, online later).
+**Status: north star and terms confirmed by Markus 2026-11-22 ("yes your read is good"); stages and bottleneck still draft.**
+North star and term readings sent 2026-11-22; data stance decided the same day (on the phone first, online later).
 
 ## His words (2026-11-22)
 
 > "and another mainspring to figure out how to gather metrics feedback to allow for
 > data gathering as a foundation for improvement later"
 
-## North star (draft 1)
+## North star (confirmed 2026-11-22)
 
 > "Every killer played in the app, starting with mine, leaves trustworthy data about
 > how the puzzle went and how it felt, gathered only in ways players agree to, so later
 > improvements rest on evidence instead of guesses."
 
-## Terms (proposed readings, not yet confirmed)
+## Terms (confirmed 2026-11-22)
 
 | Term | Reading | Source |
 |---|---|---|
