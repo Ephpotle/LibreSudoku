@@ -25,6 +25,12 @@
   puzzle that had less than 40% success rate by others. this was an attempt to reach a
   higher difficulty level." **The 40% is a difficulty filter on puzzles, not a target
   for his own win rate.** Do not aim to make him lose 60% of games.
+- 2026-11-22: The old app was called "Killer Sudoku". New direction in his words:
+  "figure out what caused the successrate different for each puzzle and make that into
+  some kind of parameter in the game that can be illustrated ... not different from
+  \"extreme\" level but rather some variant inside extreme that will show on
+  leaderboards so that people who can manage them get some kind of distinction."
+  Hardness is a visible parameter inside Extreme, not a new set of level names.
 - 2026-10-25: He agreed ("yes ok") to technique-graded levels plus a personal win rate
   per level. The win rate is a side signal of difficulty, not the goal.
 - 2026-10-25: The fork lives on the GitHub account **Ephpotle**, not hirvi22.

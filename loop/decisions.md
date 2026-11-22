@@ -4,14 +4,18 @@
 
 1. **Confirm the north star and its terms** (asked 2026-11-22). See `STRATEGY.md`.
    Everything else waits on it: the ledger is not seeded until he confirms.
-2. **Reference puzzles for the yardstick.** Can he share a few of the <40% puzzles from
+2. **Leaderboards: personal or with other players?** (asked 2026-11-22 on a card).
+   Personal records need no new permissions. Real leaderboards need internet access in
+   the app, a server, accounts or nicknames, and probably a public Play release:
+   imperative 4 in `RULES.md` forbids that until he decides.
+3. **Reference puzzles for the yardstick.** Can he share a few of the <40% puzzles from
    his old app (screenshots), and name the app? Recommendation: 3 to 5 screenshots; the
    loop transcribes and rates them.
-3. **How does the loop see his results?** Options: a screenshot of the statistics
+4. **How does the loop see his results?** Options: a screenshot of the statistics
    screen about weekly (no code, costs him a minute), or an export button that writes
    his results to a file he shares (one small PR, then the same minute). Recommendation:
    screenshots now, export only if screenshots prove too coarse.
-4. **Rhythm.** Trial (several work sessions a day and a daily reflection for a week) or
+5. **Rhythm.** Trial (several work sessions a day and a daily reflection for a week) or
    calm (work three days a week, weekly reflection). Asked once setup is confirmed.
 
 ## Standing
