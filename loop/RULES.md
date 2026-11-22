@@ -65,4 +65,7 @@
 
 ## Rhythm
 
-Not set yet (asked 2026-11-22).
+Trial, chosen by Markus on 2026-11-22 (decision card). Work sessions daily at 10:13,
+13:13 and 20:13 Stockholm time; reflection daily at 22:41. Trial review on 2026-11-29,
+when he chooses whether to keep the trial cadence or go calm. Scheduled task ids:
+work `trig_01NrDfWj9y4XkGJ6HzudDDfj`, reflection `trig_018cH2w78iwyad5szBkM6JVB`.
