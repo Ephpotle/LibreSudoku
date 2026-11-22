@@ -112,7 +112,7 @@ fun DrawScope.drawNotesCursor(
     val top = row * cellSize + topInset
     val stepX = cellSize / columns
     val stepY = (cellSize - topInset) / rows
-    val radius = cellSize * 0.028f
+    val radius = cellSize * 0.034f
     for (r in 0 until rows) {
         for (c in 0 until columns) {
             drawCircle(

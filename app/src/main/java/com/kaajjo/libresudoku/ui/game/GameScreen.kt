@@ -381,7 +381,9 @@ private fun GameScreenContent(
                     },
                     identicalNumbersHighlight = settings.identicalHighlight,
                     errorsHighlight = settings.mistakesMethod != 0,
-                    positionLines = settings.positionLines,
+                    // on killer boards the selected cage's highlight replaces the row and column
+                    // bands, which would otherwise stack on the same cells
+                    positionLines = settings.positionLines && uiState.cages.isEmpty(),
                     notesToHighlight = if (uiState.digitFirstNumber > 0) {
                         uiState.notes.filter { it.value == uiState.digitFirstNumber }
                     } else {

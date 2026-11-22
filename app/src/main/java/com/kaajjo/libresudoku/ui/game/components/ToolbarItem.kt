@@ -61,7 +61,7 @@ fun ToolbarItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp, horizontal = 8.dp),
+                .padding(vertical = 10.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(

@@ -167,7 +167,9 @@ fun Board(
         // killer boards need box borders that clearly differ from the cage outlines,
         // so they are thicker and drawn in the full number colour
         val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 2.4.dp else 1.3.dp).toPx() }
-        val boxLineColor = if (isKiller) foregroundColor else thickLineColor
+        // on killer boards the box lines stay thick but a step lighter, so the cage outlines,
+        // which carry more information, lead the eye
+        val boxLineColor = if (isKiller) foregroundColor.copy(alpha = 0.62f) else thickLineColor
         val cageLineWidth = with(LocalDensity.current) { 1.6.dp.toPx() }
         val cageLineColor = foregroundColor.copy(alpha = 0.9f)
 
@@ -189,12 +191,15 @@ fun Board(
                 cage.cells.any { it.row == selectedCell.row && it.col == selectedCell.col }
             }
         }
-        // tertiary is a different hue from the cage outlines, so the selected cage stands apart
-        val selectedCageLineWidth = with(LocalDensity.current) { 2.8.dp.toPx() }
-        val selectedCageLineColor = colorScheme.tertiary
-        val selectedCageTint = colorScheme.tertiary.copy(
-            alpha = if (colorScheme.surface.luminance() < 0.5f) 0.30f else 0.22f
-        )
+        // The selected cage is drawn in the theme's primary colour with a soft glow behind its
+        // outline. (Tertiary was tried first, but in many palettes it is a rose close to the
+        // mistake colour, and a highlight must never look like a warning.)
+        val isDarkBoard = colorScheme.surface.luminance() < 0.5f
+        val selectedCageLineWidth = with(LocalDensity.current) { 2.6.dp.toPx() }
+        val selectedCageGlowWidth = with(LocalDensity.current) { 7.dp.toPx() }
+        val selectedCageLineColor = colorScheme.primary
+        val selectedCageGlowColor = colorScheme.primary.copy(alpha = if (isDarkBoard) 0.30f else 0.22f)
+        val selectedCageTint = colorScheme.primary.copy(alpha = if (isDarkBoard) 0.22f else 0.14f)
 
         // The selection glides from cell to cell instead of jumping
         val selectionPosition = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
@@ -569,7 +574,7 @@ fun Board(
                     gameSize = size,
                     cellSize = cellSize,
                     topInset = if (isKiller) killerSumSizePx * 1.1f else 0f,
-                    color = notesColor.copy(alpha = 0.55f)
+                    color = notesColor.copy(alpha = 0.85f)
                 )
             }
 
@@ -638,6 +643,15 @@ fun Board(
                         )
                     }
 
+                    if (isSelectedCage) {
+                        drawKillerCage(
+                            cage = cage,
+                            cellSize = cellSize,
+                            strokeWidth = selectedCageGlowWidth,
+                            color = selectedCageGlowColor,
+                            labelRect = labelRect
+                        )
+                    }
                     drawKillerCage(
                         cage = cage,
                         cellSize = cellSize,
