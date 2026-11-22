@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.res.ResourcesCompat
 import com.kaajjo.libresudoku.LocalBoardColors
 import com.kaajjo.libresudoku.R
+import com.kaajjo.libresudoku.ui.theme.Paper
 import com.kaajjo.libresudoku.core.Cell
 import com.kaajjo.libresudoku.core.Note
 import com.kaajjo.libresudoku.core.qqwing.Cage
@@ -149,8 +150,8 @@ fun Board(
         val isKiller = cages.isNotEmpty()
         val colorScheme = MaterialTheme.colorScheme
         val isDarkBoard = colorScheme.surface.luminance() < 0.5f
-        val paperColor = if (isDarkBoard) PAPER_DARK else PAPER_LIGHT
-        val printColor = if (isDarkBoard) PRINT_DARK else PRINT_LIGHT
+        val paperColor = if (isDarkBoard) Paper.Dark else Paper.Light
+        val printColor = if (isDarkBoard) Paper.PrintDark else Paper.PrintLight
         val thinLineColor = if (isKiller) printColor.copy(alpha = 0.16f) else boardColors.thinLineColor
         val notesColor = if (isKiller) printColor.copy(alpha = 0.72f) else boardColors.notesColor
         val sumColor = if (isKiller) printColor else foregroundColor
@@ -728,9 +729,3 @@ private fun BoardPreviewLight() {
 
 /** Placed digits are set a little smaller than the old sans: the serif's figures run larger */
 private const val INK_SIZE_FACTOR = 0.8f
-
-// Puzzle-book paper and graphite print for killer boards
-private val PAPER_LIGHT = Color(0xFFF8F4EA)
-private val PAPER_DARK = Color(0xFF1D2025)
-private val PRINT_LIGHT = Color(0xFF2B2926)
-private val PRINT_DARK = Color(0xFFD7D1C4)

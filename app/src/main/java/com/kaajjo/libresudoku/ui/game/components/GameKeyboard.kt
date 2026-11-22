@@ -128,7 +128,7 @@ fun KeyboardItem(
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 2.dp),
+            modifier = Modifier.padding(vertical = 15.dp, horizontal = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {

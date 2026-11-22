@@ -81,6 +81,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import com.kaajjo.libresudoku.R
+import com.kaajjo.libresudoku.ui.theme.PaperTheme
 import com.kaajjo.libresudoku.core.Cell
 import com.kaajjo.libresudoku.core.PreferencesConstants
 import com.kaajjo.libresudoku.core.qqwing.GameType
@@ -191,12 +192,24 @@ fun GameScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun GameScreenContent(
     uiState: GameUiState,
     onEvent: (GameUiEvent) -> Unit,
     celebration: Int = 0
+) {
+    // a killer puzzle is set on a printed page: the screen around the board takes its paper
+    PaperTheme(enabled = uiState.cages.isNotEmpty()) {
+        GameScreenBody(uiState, onEvent, celebration)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GameScreenBody(
+    uiState: GameUiState,
+    onEvent: (GameUiEvent) -> Unit,
+    celebration: Int
 ) {
     val settings = uiState.settings
     val sudokuUtils = remember { SudokuUtils() }
