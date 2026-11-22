@@ -46,6 +46,9 @@
   best of your ability", worked in the thread "Improve visual design and gameplay feel"
   (first PR #11). The no-solving-aids rule applies to it. Loop sessions do not open
   competing design PRs.
+- 2026-11-22 (relayed by the design thread): the design goal should reach "new levels,
+  not mediocre". Each reflection scores the design independently, 1-10, and gaps under
+  8 go back to the design thread as its next items.
 - 2026-10-25: He agreed ("yes ok") to technique-graded levels plus a personal win rate
   per level. The win rate is a side signal of difficulty, not the goal.
 - 2026-10-25: The fork lives on the GitHub account **Ephpotle**, not hirvi22.

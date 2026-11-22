@@ -135,13 +135,13 @@
   {
    "id": "T6",
    "stage": "4",
-   "importance": 2,
+   "importance": 3,
    "goal": "The app's visual design and gameplay feel are as good as they can be (Markus, 2026-11-22: \"improve the general visual design and gameplay feel to the best of your ability\").",
-   "measure": "Open feel/design PRs merged by Markus, and his verdict on each. Today: PR #11 open (selected-cage highlight, gliding selection, digit pop, tactile keys, info pills).",
+   "measure": "Independent design critique score 1-10 of the latest design PR state, written by each reflection as a demanding designer would, from the code and the previews in /mnt/project-files/game-polish/, without anchoring on the design thread's self-review. Target >= 8 on every dimension. Today: design thread self-score 6/10 (2026-11-22, not an independent score).",
    "opened": "2026-11-22",
    "level": 0,
-   "level_reason": "New. Worked in its own thread.",
-   "gap": "2026-11-22: First result PR #11, from the thread \"Improve visual design and gameplay feel\" (reported by that thread, not verified by the loop).",
+   "level_reason": "Bar raised 2026-11-22: Markus wants design at \"new levels, not mediocre\" (relayed by the design thread; his words not seen by the loop directly).",
+   "gap": "2026-11-22: First result PR #11, from the thread \"Improve visual design and gameplay feel\" (reported by that thread, not verified by the loop). 2026-11-22: Round 3 in progress (error-like cage colour, stacked highlights, box vs cage line contrast, empty bottom third, faint note dots). Blocker: dl.google.com is blocked in the cloud, so no real builds or screenshots; the design thread asked Markus to allow it.",
    "known_to_work": [],
    "tried": [],
    "not_tried": [],
@@ -149,7 +149,7 @@
     "No solving aids (2026-11-08): design may make the board easier to read, never do the thinking.",
     "Owned by the thread \"Improve visual design and gameplay feel\"; the loop does not open competing design PRs."
    ],
-   "next_commitment": "None for loop sessions. Reflections check PR #11 and that thread's progress, and make sure Extreme, hardness and style displays (T2, T5) reuse its visual language.",
+   "next_commitment": "Each reflection: write loop/research/design-critique-<date>.md scoring PR #11 (or its successor) per dimension 1-10 with concrete gaps; every gap below 8 goes into this tension as a next item and is sent to the thread \"Improve visual design and gameplay feel\" with message_thread. Work sessions still do not open design PRs.",
    "waits_on": "The design thread and Markus's review of PR #11.",
    "last_session": null,
    "last_reflect": null
