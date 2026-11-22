@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -331,17 +333,17 @@ private fun GameScreenBody(
         }
 
         Column(
-            // level, time and board sit right under the app bar; the controls sit at the
-            // bottom in thumb reach, and any spare height goes between the two
+            // the controls sit at the bottom in thumb reach; the level, time and board sit
+            // above them as one block
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPaddings)
                 .padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            // spare height is shared above and below the level, time and board, more of it below,
-            // so they sit near the middle and the controls stay in thumb reach
-            Spacer(modifier = Modifier.weight(0.6f))
+            // on tall phones most of the spare height goes above the board, which brings the
+            // board's top rows down into easier thumb reach instead of leaving a gap over the keys
+            Spacer(modifier = Modifier.weight(1f))
             AnimatedVisibility(visible = !uiState.endGame) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -424,7 +426,7 @@ private fun GameScreenBody(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(0.4f))
 
             AnimatedContent(uiState.advancedHintMode, label = "Advanced hint mode") { hintMode ->
                 if (hintMode) {
@@ -543,10 +545,18 @@ private fun GameHintContent(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit
 
 @Composable
 private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
+    // tall screens have room to spare, so the number keys grow into bigger targets
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val keyMinHeight = when {
+        screenHeight >= 800 -> 72.dp
+        screenHeight >= 720 -> 64.dp
+        else -> 0.dp
+    }
     Column(
         verticalArrangement = if (uiState.settings.funKeyboardOverNum) ReverseArrangement else Arrangement.Top
     ) {
         DefaultGameKeyboard(
+            itemModifier = Modifier.heightIn(min = keyMinHeight),
             size = uiState.size,
             remainingUses = uiState.remainingUsesList.takeIf { uiState.settings.remainingUse },
             onClick = { onEvent(GameUiEvent.NumberTapped(it)) },
