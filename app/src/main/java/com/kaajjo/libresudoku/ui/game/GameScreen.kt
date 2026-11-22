@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -192,7 +193,7 @@ fun GameScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GameScreenContent(
+internal fun GameScreenContent(
     uiState: GameUiState,
     onEvent: (GameUiEvent) -> Unit,
     celebration: Int = 0
@@ -317,12 +318,20 @@ private fun GameScreenContent(
         }
 
         Column(
-            modifier = Modifier.padding(scaffoldPaddings).padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.SpaceEvenly
+            // level, time and board sit right under the app bar; the controls sit at the
+            // bottom in thumb reach, and any spare height goes between the two
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(scaffoldPaddings)
+                .padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.Top
         ) {
+            // spare height is shared above and below the level, time and board, more of it below,
+            // so they sit near the middle and the controls stay in thumb reach
+            Spacer(modifier = Modifier.weight(0.6f))
             AnimatedVisibility(visible = !uiState.endGame) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -401,6 +410,8 @@ private fun GameScreenContent(
                         ?.let { it.helpCells + it.targetCell }
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             AnimatedContent(uiState.advancedHintMode, label = "Advanced hint mode") { hintMode ->
                 if (hintMode) {
@@ -606,11 +617,12 @@ fun TopBoardSection(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val containerColor by animateColorAsState(
-        targetValue = if (emphasized) colorScheme.errorContainer else colorScheme.surfaceColorAtElevation(3.dp),
+        targetValue = colorScheme.surfaceColorAtElevation(3.dp),
         label = "Info pill background"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (emphasized) colorScheme.onErrorContainer else colorScheme.onSurfaceVariant,
+        // a counted mistake tints the text, not the whole pill, so it informs without shouting
+        targetValue = if (emphasized) colorScheme.error else colorScheme.onSurfaceVariant,
         label = "Info pill content"
     )
     Surface(

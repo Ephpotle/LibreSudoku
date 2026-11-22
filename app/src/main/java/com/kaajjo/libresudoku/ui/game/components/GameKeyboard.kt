@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -30,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.Font
@@ -37,6 +39,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kaajjo.libresudoku.LocalBoardColors
 import com.kaajjo.libresudoku.R
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.ui.theme.LibreSudokuTheme
@@ -59,21 +62,28 @@ fun KeyboardItem(
     val mutableInteractionSource by remember { mutableStateOf(MutableInteractionSource()) }
     val pressed by mutableInteractionSource.collectIsPressedAsState()
     val colorScheme = MaterialTheme.colorScheme
+    val inkColor = LocalBoardColors.current.foregroundColor
     val color by animateColorAsState(
         targetValue = when {
             selected -> colorScheme.primaryContainer
-            notesMode -> colorScheme.tertiaryContainer.copy(alpha = 0.55f)
+            notesMode -> colorScheme.surface
             else -> colorScheme.surfaceColorAtElevation(3.dp)
         },
         label = "Key background"
     )
+    // digits on the keys are in the same ink as on the board; in notes mode they turn to
+    // pencil and the key gets an outline instead of a fill
     val textColor by animateColorAsState(
         targetValue = when {
             selected -> colorScheme.onPrimaryContainer
-            notesMode -> colorScheme.onTertiaryContainer
-            else -> colorScheme.onSurface
+            notesMode -> colorScheme.onSurfaceVariant
+            else -> inkColor
         },
         label = "Key text"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (notesMode && !selected) colorScheme.outline else Color.Transparent,
+        label = "Key outline"
     )
     // keys sink a little while pressed, so a tap is felt as well as seen
     val pressScale by animateFloatAsState(
@@ -96,6 +106,7 @@ fun KeyboardItem(
             }
             .clip(RoundedCornerShape(14.dp))
             .background(color)
+            .border(1.5.dp, borderColor, RoundedCornerShape(14.dp))
             .combinedClickable(
                 interactionSource = mutableInteractionSource,
                 onClick = {

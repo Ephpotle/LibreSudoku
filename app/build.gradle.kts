@@ -56,6 +56,10 @@ android {
         }
     }
 
+    testOptions {
+        // Robolectric tests (including the opt-in screenshot test) read app resources such as fonts
+        unitTests.isIncludeAndroidResources = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -103,6 +107,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.test.core)
     testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation(libs.ui.test.junit4)
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation("androidx.test:runner:1.6.2")

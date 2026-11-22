@@ -52,11 +52,16 @@ fun DrawScope.drawNotes(
     cellSize: Float,
     cellSizeDivWidth: Float,
     killerSumBounds: android.graphics.Rect,
+    sumCells: Set<Pair<Int, Int>>? = null,
 ) {
     val noteBounds = android.graphics.Rect()
 
     paint.getTextBounds("1", 0, 1, noteBounds)
-    val cellDivHeight = (cellSize - killerSumBounds.height() * 1.5f) / floor(sqrt(size.toFloat()))
+    // Notes share the cell below the cage sum and above a small bottom margin. Only cells that
+    // carry a sum ([sumCells]; all cells when null) give up the top strip for it.
+    val noteRows = floor(sqrt(size.toFloat()))
+    val sumTop = notesTopInset(cellSize, killerSumBounds.height().toFloat())
+    val plainTop = notesTopInset(cellSize, 0f)
 
     drawIntoCanvas { canvas ->
         notes.forEach { note ->
@@ -65,6 +70,8 @@ fun DrawScope.drawNotes(
 
             val noteCol = getNoteColumnNumber(note.value, size)
             val noteRow = getNoteRowNumber(note.value, size)
+            val top = if (sumCells == null || (note.row to note.col) in sumCells) sumTop else plainTop
+            val cellDivHeight = (cellSize - top - cellSize * NOTES_BOTTOM_MARGIN) / noteRows
 
 
 
@@ -78,7 +85,7 @@ fun DrawScope.drawNotes(
             if (notesToHighlight.contains(note)) {
                 canvas.nativeCanvas.drawCircle(
                     note.col * cellSize + cellSizeDivWidth / 2f + (cellSizeDivWidth * noteRow) + horizontalPadding,
-                    note.row * cellSize + noteBounds.height() * 1.5f + killerSumBounds.height() + (cellDivHeight * noteCol) - (noteBounds.height() * 0.5f),
+                    note.row * cellSize + top + cellDivHeight * (noteCol + 0.5f),
                     noteTextMeasure * 1.1f,
                     highlightPaint
                 )
@@ -87,7 +94,7 @@ fun DrawScope.drawNotes(
             canvas.nativeCanvas.drawText(
                 textToDraw,
                 note.col * cellSize + cellSizeDivWidth / 2f + (cellSizeDivWidth * noteRow) - noteTextMeasure / 2f + horizontalPadding,
-                note.row * cellSize + noteBounds.height() * 1.5f + killerSumBounds.height() + (cellDivHeight * noteCol),
+                note.row * cellSize + top + cellDivHeight * (noteCol + 0.5f) + noteBounds.height() / 2f,
                 paint
             )
         }
@@ -111,7 +118,7 @@ fun DrawScope.drawNotesCursor(
     val left = col * cellSize
     val top = row * cellSize + topInset
     val stepX = cellSize / columns
-    val stepY = (cellSize - topInset) / rows
+    val stepY = (cellSize - topInset - cellSize * NOTES_BOTTOM_MARGIN) / rows
     val radius = cellSize * 0.034f
     for (r in 0 until rows) {
         for (c in 0 until columns) {
@@ -123,6 +130,13 @@ fun DrawScope.drawNotesCursor(
         }
     }
 }
+
+/** Space notes leave at the bottom of a cell, as a fraction of the cell size */
+const val NOTES_BOTTOM_MARGIN = 0.06f
+
+/** Where notes start in a cell: under the cage sum on killer boards, near the top otherwise */
+fun notesTopInset(cellSize: Float, sumLabelHeight: Float): Float =
+    if (sumLabelHeight > 0f) sumLabelHeight * 1.35f + cellSize * 0.04f else cellSize * 0.04f
 
 fun DrawScope.drawNumbers(
     size: Int,
