@@ -20,10 +20,13 @@
 ## Markus's decisions and corrections
 
 - 2026-10-25 (first thread): "I try to always play a game that has below 40% success
-  rate for a challenge." This is the core of the north star.
-- 2026-10-25: The app is offline, so the success rate is his own win rate per level,
-  not a crowd statistic. He agreed ("yes ok") to technique-graded levels plus a
-  personal win rate per level.
+  rate for a challenge."
+- 2026-11-22 (Mainspring thread), correcting the reading above: "i only ever attempted a
+  puzzle that had less than 40% success rate by others. this was an attempt to reach a
+  higher difficulty level." **The 40% is a difficulty filter on puzzles, not a target
+  for his own win rate.** Do not aim to make him lose 60% of games.
+- 2026-10-25: He agreed ("yes ok") to technique-graded levels plus a personal win rate
+  per level. The win rate is a side signal of difficulty, not the goal.
 - 2026-10-25: The fork lives on the GitHub account **Ephpotle**, not hirvi22.
 - 2026-10-27: He prefers solid, high-contrast lines: solid cage outlines, killer box
   borders in full black (PR #6).
