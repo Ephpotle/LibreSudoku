@@ -515,7 +515,7 @@ class GameViewModelTest {
         runCurrent()
         assertEquals(1, persistedGame?.hintsUsed)
 
-        val reloaded = loadedGame()
+        val reloaded = loadedGame(playedBefore = true)
         assertEquals(1, reloaded.uiState.value.aidUse?.hints)
         assertEquals(1, reloaded.uiState.value.aidUse?.computedNotes)
     }
@@ -553,7 +553,7 @@ class GameViewModelTest {
             uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
             timer = java.time.Duration.ofSeconds(30)
         )
-        val viewModel = loadedGame()
+        val viewModel = loadedGame(playedBefore = true)
         viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
         viewModel.sendEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint))
         runCurrent()
@@ -662,7 +662,7 @@ class GameViewModelTest {
         }
     }
 
-    private fun TestScope.loadedGame(): GameViewModel = createViewModel().also {
+    private fun TestScope.loadedGame(playedBefore: Boolean = false): GameViewModel = createViewModel(playedBefore).also {
         it.sendEvent(GameUiEvent.ScreenResumed)
         runCurrent()
         assertFalse(it.uiState.value.isLoading)
