@@ -6,6 +6,7 @@ import com.kaajjo.libresudoku.core.Note
 import com.kaajjo.libresudoku.core.qqwing.GameDifficulty
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.core.qqwing.advanced_hint.AdvancedHintSettings
+import com.kaajjo.libresudoku.data.database.model.GameEndReason
 import com.kaajjo.libresudoku.data.database.model.Record
 import com.kaajjo.libresudoku.data.database.model.SavedGame
 import com.kaajjo.libresudoku.data.database.model.SudokuBoard
@@ -476,6 +477,91 @@ class GameViewModelTest {
         runCurrent()
         assertEquals("50" + SOLUTION.drop(2), persistedGame?.currentBoard)
         assertEquals(1, effects.count { it == GameUiSideEffect.SaveFailed })
+    }
+
+    @Test
+    fun `a clean game is saved as unassisted with its end reason`() = runGameTest {
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesMethod = 0))
+        coEvery { boardRepository.get(BOARD_ID) } returns board(emptyCells = 1)
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        viewModel.sendEvent(GameUiEvent.NumberTapped(5))
+        runCurrent()
+
+        val saved = persistedGame!!
+        assertEquals(0, saved.hintsUsed)
+        assertEquals(0, saved.advancedHintsUsed)
+        assertEquals(0, saved.computedNotesUsed)
+        assertEquals(0, saved.mistakeMarking)
+        assertEquals(0, saved.tryAgainUsed)
+        assertEquals(GameEndReason.SOLVED, saved.endReason)
+        assertEquals(true, saved.unassisted)
+    }
+
+    @Test
+    fun `hints and computed notes are recorded and survive restart and reload`() = runGameTest {
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesMethod = 0))
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.ComputeNotes)
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        viewModel.sendEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint))
+        runCurrent()
+        assertEquals(1, persistedGame?.hintsUsed)
+        assertEquals(1, persistedGame?.computedNotesUsed)
+        assertEquals(false, persistedGame?.unassisted)
+
+        viewModel.sendEvent(GameUiEvent.ShowRestartDialog)
+        viewModel.sendEvent(GameUiEvent.ConfirmRestart)
+        runCurrent()
+        assertEquals(1, persistedGame?.hintsUsed)
+
+        val reloaded = loadedGame()
+        assertEquals(1, reloaded.uiState.value.aidUse?.hints)
+        assertEquals(1, reloaded.uiState.value.aidUse?.computedNotes)
+    }
+
+    @Test
+    fun `mistake marking against the solution is recorded as an aid`() = runGameTest {
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesMethod = 2))
+        loadedGame()
+        runCurrent()
+        assertEquals(2, persistedGame?.mistakeMarking)
+        assertEquals(false, persistedGame?.unassisted)
+    }
+
+    @Test
+    fun `mistake limit loss and try again are told apart from giving up`() = runGameTest {
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesLimit = true, mistakesMethod = 2))
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        listOf(3, 4, 6).forEach { number -> viewModel.sendEvent(GameUiEvent.NumberTapped(number)) }
+        runCurrent()
+        viewModel.sendEvent(GameUiEvent.TryAgainAfterMistake)
+        viewModel.sendEvent(GameUiEvent.NumberTapped(7))
+        runCurrent()
+        viewModel.sendEvent(GameUiEvent.EndGameAfterMistakes)
+        runCurrent()
+
+        assertEquals(1, persistedGame?.tryAgainUsed)
+        assertEquals(GameEndReason.MISTAKE_LIMIT, persistedGame?.endReason)
+        assertEquals(true, persistedGame?.giveUp)
+    }
+
+    @Test
+    fun `a game saved before aid tracking stays unknown`() = runGameTest {
+        persistedGame = SavedGame(
+            uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
+            timer = java.time.Duration.ofSeconds(30)
+        )
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        viewModel.sendEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint))
+        runCurrent()
+
+        assertEquals(null, viewModel.uiState.value.aidUse)
+        assertEquals(null, persistedGame?.hintsUsed)
+        assertEquals(null, persistedGame?.mistakeMarking)
+        assertEquals(null, persistedGame?.unassisted)
     }
 
     private fun TestScope.assertSavedGameRestored(type: GameType) {

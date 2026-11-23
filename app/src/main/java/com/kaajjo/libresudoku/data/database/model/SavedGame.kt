@@ -38,4 +38,29 @@ data class SavedGame(
     @ColumnInfo(name = "started_at") val startedAt: ZonedDateTime? = null,
     @Serializable(with = ZonedDateTimeLongSerializer::class)
     @ColumnInfo(name = "finished_at") val finishedAt: ZonedDateTime? = null,
-)
+    // Aid use. NULL means unknown: the game was saved before these columns existed.
+    @ColumnInfo(name = "hints_used") val hintsUsed: Int? = null,
+    @ColumnInfo(name = "advanced_hints_used") val advancedHintsUsed: Int? = null,
+    @ColumnInfo(name = "computed_notes_used") val computedNotesUsed: Int? = null,
+    /** Highest mistake highlighting used during the game: 0 off, 1 rule conflicts, 2 compared with the solution. */
+    @ColumnInfo(name = "mistake_marking") val mistakeMarking: Int? = null,
+    @ColumnInfo(name = "try_again_used") val tryAgainUsed: Int? = null,
+    /** How a finished game ended: see [GameEndReason]; NULL while playing or unknown. */
+    @ColumnInfo(name = "end_reason") val endReason: String? = null,
+    @ColumnInfo(name = "app_version_code") val appVersionCode: Int? = null,
+) {
+    /** True when the game is known to have been played without any aid, false when one was used, null when unknown. */
+    val unassisted: Boolean?
+        get() {
+            val counts = listOf(hintsUsed, advancedHintsUsed, computedNotesUsed, mistakeMarking)
+            if (counts.any { it == null }) return null
+            return hintsUsed == 0 && advancedHintsUsed == 0 && computedNotesUsed == 0 && mistakeMarking == 0
+        }
+}
+
+/** Stored values of [SavedGame.endReason]. */
+object GameEndReason {
+    const val SOLVED = "solved"
+    const val GAVE_UP = "gave_up"
+    const val MISTAKE_LIMIT = "mistake_limit"
+}
