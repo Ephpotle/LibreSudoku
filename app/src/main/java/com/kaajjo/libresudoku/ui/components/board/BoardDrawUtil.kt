@@ -132,11 +132,11 @@ fun DrawScope.drawNotesCursor(
 }
 
 /** Space notes leave at the bottom of a cell, as a fraction of the cell size */
-const val NOTES_BOTTOM_MARGIN = 0.06f
+const val NOTES_BOTTOM_MARGIN = 0.09f
 
 /** Where notes start in a cell: under the cage sum on killer boards, near the top otherwise */
 fun notesTopInset(cellSize: Float, sumLabelHeight: Float): Float =
-    if (sumLabelHeight > 0f) sumLabelHeight * 1.35f + cellSize * 0.04f else cellSize * 0.04f
+    if (sumLabelHeight > 0f) sumLabelHeight * 1.35f + cellSize * 0.04f else cellSize * 0.08f
 
 fun DrawScope.drawNumbers(
     size: Int,
