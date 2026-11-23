@@ -153,7 +153,7 @@ fun Board(
         val paperColor = if (isDarkBoard) Paper.Dark else Paper.Light
         val printColor = if (isDarkBoard) Paper.PrintDark else Paper.PrintLight
         val thinLineColor = if (isKiller) printColor.copy(alpha = 0.16f) else boardColors.thinLineColor
-        val notesColor = if (isKiller) printColor.copy(alpha = 0.72f) else boardColors.notesColor
+        val notesColor = if (isKiller) printColor.copy(alpha = 0.9f) else boardColors.notesColor
         val sumColor = if (isKiller) printColor else foregroundColor
 
         // highlight (cells)
@@ -172,18 +172,21 @@ fun Board(
                 }
             }
         }
-        val noteSizePx = with(LocalDensity.current) { (cellSizeDivWidth * 0.8f).toSp().toPx() }
-        val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.2f }
+        // pencil marks on killer boards are a little larger, so they stay legible next to the sums
+        val noteSizePx = with(LocalDensity.current) {
+            (cellSizeDivWidth * if (isKiller) 0.9f else 0.8f).toSp().toPx()
+        }
+        val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.25f }
 
         val thinLineWidth = with(LocalDensity.current) { 1.3.dp.toPx() }
         // killer boards need box borders that clearly differ from the cage outlines,
         // so they are thicker and drawn in the full number colour
-        val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 2.4.dp else 1.3.dp).toPx() }
+        val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 3.2.dp else 1.3.dp).toPx() }
         // box lines are the heaviest print on the page; cage outlines are thinner and lighter
         val boxLineColor = if (isKiller) printColor else thickLineColor
         // cage outlines are solid, full-strength print (as asked for in #6); the outlines alone
         // carry the cage shapes, so cages get no background wash
-        val cageLineWidth = with(LocalDensity.current) { 1.5.dp.toPx() }
+        val cageLineWidth = with(LocalDensity.current) { 1.1.dp.toPx() }
         val cageLineColor = printColor
 
         // the cage of the selected cell is outlined more strongly, so its shape is easy to follow

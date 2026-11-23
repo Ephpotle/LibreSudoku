@@ -355,7 +355,7 @@ private fun GameScreenBody(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPaddings)
-                .padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
+                .padding(start = 4.dp, end = 4.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.Top
         ) {
             // the pills are a header under the app bar; the board is centred in the space between
