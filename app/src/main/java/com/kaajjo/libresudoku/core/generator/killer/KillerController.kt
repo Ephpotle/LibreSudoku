@@ -26,7 +26,12 @@ class KillerController(
     private val random: Random = Random.Default,
     private val maxGenerationMillis: Long = 20_000L
 ) {
-    private class Plan(val profile: CageProfile, val merges: Int)
+    /**
+     * @param candidates Merges compared per round (see [KillerPuzzleGenerator.generate]); zero keeps the first.
+     * @param searchMillis When positive, keep generating until this much time has passed and return the hardest
+     *   matching puzzle found, instead of the first.
+     */
+    private class Plan(val profile: CageProfile, val merges: Int, val candidates: Int = 0, val searchMillis: Long = 0)
 
     private val small = CageProfile(intArrayOf(2, 3, 4), intArrayOf(4, 4, 2))
     private val medium = CageProfile(intArrayOf(2, 3, 4, 5), intArrayOf(2, 4, 3, 2))
@@ -36,7 +41,7 @@ class KillerController(
         GameDifficulty.Easy -> Plan(small, 0)
         GameDifficulty.Moderate -> Plan(small, 3)
         GameDifficulty.Hard -> Plan(small, 8)
-        GameDifficulty.Challenge -> Plan(medium, 40)
+        GameDifficulty.Challenge -> Plan(medium, 40, candidates = 20, searchMillis = 6_000L)
         else -> Plan(small, 3)
     }
 
@@ -60,23 +65,33 @@ class KillerController(
             val geometry = SudokuGeometry(type.size, type.sectionHeight, type.sectionWidth)
             val rng = Random(seed); val plan = plan(targetDifficulty); val rater = KillerLogicalRater()
             var attempts = 0; var mismatched = 0
+            var best: GeneratedKiller? = null; var bestDifficulty = targetDifficulty
             try {
                 // Only the time budget ends the search; every attempt is independent.
                 repeat(Int.MAX_VALUE) {
                     checkpoint(); attempts++
                     val generated = KillerPuzzleGenerator.generate(
-                        geometry, plan.profile, rng, rater, merges = plan.merges, checkpoint = checkpoint
+                        geometry, plan.profile, rng, rater, merges = plan.merges, candidates = plan.candidates,
+                        checkpoint = checkpoint
                     )
                     if (generated == null || !generated.rating.solved) return@repeat
                     val actual = KillerRatingPolicy.difficulty(geometry.cellCount, generated.rating)
                     if (targetDifficulty == GameDifficulty.Unspecified || actual == targetDifficulty) {
-                        return@withContext result(type, generated, actual)
+                        if (plan.searchMillis <= 0) return@withContext result(type, generated, actual)
+                        if (best == null || generated.rating.effortScore > best!!.rating.effortScore) {
+                            best = generated; bestDifficulty = actual
+                        }
+                        if (System.nanoTime() - started >= plan.searchMillis * 1_000_000L) {
+                            return@withContext result(type, best!!, bestDifficulty)
+                        }
+                        return@repeat
                     }
                     mismatched++
                 }
             } catch (_: GenerationTimeBudgetExceeded) {
                 context.ensureActive()
             }
+            best?.let { return@withContext result(type, it, bestDifficulty) }
             throw NoRatedPuzzleException("No Killer puzzle for $targetDifficulty; attempts=$attempts, mismatched=$mismatched")
         }
     }
