@@ -708,7 +708,7 @@ class GameViewModel @Inject constructor(
             },
             tryAgainUsed = aid?.tryAgain,
             endReason = snapshot.endReason,
-            appVersionCode = if (aid == null) existing?.appVersionCode else BuildConfig.VERSION_CODE
+            appVersionCode = if (aid == null) existing?.appVersionCode else existing?.appVersionCode ?: BuildConfig.VERSION_CODE
         )
         if (existing == null) savedGameRepository.insert(saved) else savedGameRepository.update(saved)
         if (request.recordCompletion) {

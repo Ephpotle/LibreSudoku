@@ -47,6 +47,7 @@ data class SavedGame(
     @ColumnInfo(name = "try_again_used") val tryAgainUsed: Int? = null,
     /** How a finished game ended: see [GameEndReason]; NULL while playing or unknown. */
     @ColumnInfo(name = "end_reason") val endReason: String? = null,
+    /** Build the game was first saved with, kept across app updates. */
     @ColumnInfo(name = "app_version_code") val appVersionCode: Int? = null,
 ) {
     /** True when the game is known to have been played without any aid, false when one was used, null when unknown. */
@@ -63,4 +64,6 @@ object GameEndReason {
     const val SOLVED = "solved"
     const val GAVE_UP = "gave_up"
     const val MISTAKE_LIMIT = "mistake_limit"
+    /** Left unfinished when a new game was started. */
+    const val ABANDONED = "abandoned"
 }

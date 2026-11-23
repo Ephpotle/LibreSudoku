@@ -548,6 +548,23 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `the app version is the one the game was started with`() = runGameTest {
+        persistedGame = SavedGame(
+            uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
+            timer = java.time.Duration.ofSeconds(30),
+            hintsUsed = 0, advancedHintsUsed = 0, computedNotesUsed = 0, mistakeMarking = 0, tryAgainUsed = 0,
+            appVersionCode = 1
+        )
+        val viewModel = loadedGame(playedBefore = true)
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        viewModel.sendEvent(GameUiEvent.NumberTapped(5))
+        runCurrent()
+
+        assertEquals(5, persistedGame?.currentBoard?.first()?.digitToInt())
+        assertEquals(1, persistedGame?.appVersionCode)
+    }
+
+    @Test
     fun `a game saved before aid tracking stays unknown`() = runGameTest {
         persistedGame = SavedGame(
             uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
