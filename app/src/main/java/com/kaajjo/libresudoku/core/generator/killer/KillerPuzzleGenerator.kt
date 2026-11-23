@@ -47,6 +47,8 @@ object KillerPuzzleGenerator {
      * @param maxNodes Node budget of the longer search for a second solution when the logical rater stalls.
      * @param merges Most cage merges to try after a unique puzzle is found; each one makes it harder.
      * @param maxMergedSize Largest cage a merge may create.
+     * @param candidates When positive, each merge round rates up to this many solvable merges and keeps the one
+     *   with the highest effort score, stopping once no merge raises it. When zero, the first solvable merge is kept.
      * @param checkpoint Cooperative cancellation or deadline callback; exceptions propagate to the caller.
      * @return A unique puzzle, or null when this attempt did not converge; callers retry with fresh randomness.
      */
@@ -59,10 +61,12 @@ object KillerPuzzleGenerator {
         maxNodes: Long = 200_000L,
         merges: Int = 0,
         maxMergedSize: Int = geometry.size - 3,
+        candidates: Int = 0,
         checkpoint: () -> Unit = {}
     ): GeneratedKiller? {
         val base = unique(geometry, profile, random, rater, quickNodes, maxNodes, checkpoint) ?: return null
         if (merges <= 0 || !base.rating.solved) return base
+        if (candidates > 0) return climb(base, merges, maxMergedSize, candidates, rater, random, checkpoint)
         return harden(base, merges, maxMergedSize, rater, random, checkpoint)
     }
 
@@ -143,6 +147,53 @@ object KillerPuzzleGenerator {
             if (!merged) return GeneratedKiller(layout, solution, rating)
         }
         return GeneratedKiller(layout, solution, rating)
+    }
+
+    /**
+     * Like [harden], but each round rates up to [candidates] solvable merges and keeps the hardest one, and only
+     * while it raises the effort score. Slower, and gives clearly harder puzzles.
+     */
+    private fun climb(
+        base: GeneratedKiller, merges: Int, maxMergedSize: Int, candidates: Int, rater: KillerLogicalRater,
+        random: Random, checkpoint: () -> Unit
+    ): GeneratedKiller {
+        val geometry = base.layout.geometry; val solution = base.solution
+        var layout = base.layout; var rating = base.rating
+        repeat(merges) {
+            checkpoint()
+            var best: KillerLayout? = null; var bestRating: KillerRating? = null; var solvable = 0
+            for ((a, b) in mergeablePairs(layout, maxMergedSize, solution).shuffled(random)) {
+                if (solvable >= candidates) break
+                val cages = layout.cages.filterIndexed { k, _ -> k != a && k != b } + (layout.cages[a] + layout.cages[b])
+                val trial = KillerLayout.fromSolution(geometry, cages, solution)
+                val trialRating = rateOrNull(rater, trial, checkpoint) ?: continue
+                if (!trialRating.solved) continue
+                solvable++
+                if (bestRating == null || trialRating.effortScore > bestRating.effortScore) {
+                    best = trial; bestRating = trialRating
+                }
+            }
+            if (best == null || bestRating == null || bestRating.effortScore <= rating.effortScore) {
+                return GeneratedKiller(layout, solution, rating)
+            }
+            layout = best; rating = bestRating
+        }
+        return GeneratedKiller(layout, solution, rating)
+    }
+
+    /** Neighbouring cage pairs whose union stays within [maxMergedSize] and repeats no digit. */
+    private fun mergeablePairs(layout: KillerLayout, maxMergedSize: Int, solution: IntArray): List<Pair<Int, Int>> {
+        val t = Topology.of(layout.geometry)
+        val pairs = LinkedHashSet<Pair<Int, Int>>()
+        for (c in 0 until t.cells) for (o in neighbours(t, c)) {
+            val a = layout.cageOf[c]; val b = layout.cageOf[o]
+            if (a >= b) continue
+            val ca = layout.cages[a]; val cb = layout.cages[b]
+            if (ca.size + cb.size > maxMergedSize) continue
+            if (ca.any { x -> cb.any { solution[it] == solution[x] } }) continue
+            pairs += a to b
+        }
+        return pairs.toList()
     }
 
     private fun rateOrNull(rater: KillerLogicalRater, layout: KillerLayout, checkpoint: () -> Unit): KillerRating? =

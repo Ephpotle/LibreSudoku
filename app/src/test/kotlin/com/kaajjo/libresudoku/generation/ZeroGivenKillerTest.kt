@@ -84,6 +84,25 @@ class ZeroGivenKillerTest {
     }
 
     @Test
+    fun climbedPuzzles_AreUniqueAndNoEasierThanTheirBase() {
+        val profile = CageProfile(intArrayOf(2, 3, 4, 5), intArrayOf(2, 4, 3, 2))
+        var checked = 0
+        repeat(4) { seed ->
+            val base = KillerPuzzleGenerator.generate(nine, profile, Random(seed), merges = 0) ?: return@repeat
+            if (!base.rating.solved) return@repeat
+            val climbed = KillerPuzzleGenerator.generate(nine, profile, Random(seed), merges = 40, candidates = 5)
+                ?: return@repeat
+            checked++
+            assertTrue(climbed.rating.solved)
+            assertTrue(climbed.rating.effortScore >= base.rating.effortScore)
+            val found = KillerSolver(climbed.layout).solve(2, maxNodes = 50_000_000L)
+            assertEquals(1, found.size)
+            assertArrayEquals(climbed.solution, found.single())
+        }
+        assertTrue("Too few completed puzzles: $checked", checked >= 2)
+    }
+
+    @Test
     fun hardestLabel_NeedsMoreThanCageArithmeticOnRows() {
         val random = Random(5)
         val result = runBlocking { KillerController(random, 60_000).generate(GameType.Killer9x9, GameDifficulty.Challenge) }
