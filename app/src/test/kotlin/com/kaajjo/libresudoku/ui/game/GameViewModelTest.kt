@@ -500,7 +500,7 @@ class GameViewModelTest {
 
     @Test
     fun `hints and computed notes are recorded and survive restart and reload`() = runGameTest {
-        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesMethod = 0))
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesMethod = 0, disableHints = false))
         val viewModel = loadedGame()
         viewModel.sendEvent(GameUiEvent.ComputeNotes)
         viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
@@ -570,6 +570,7 @@ class GameViewModelTest {
             uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
             timer = java.time.Duration.ofSeconds(30)
         )
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, disableHints = false))
         val viewModel = loadedGame(playedBefore = true)
         viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
         viewModel.sendEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint))
