@@ -21,10 +21,12 @@ import kotlin.random.Random
  *
  * @param random Source of one independent seed per request.
  * @param maxGenerationMillis Positive elapsed-time budget of one request.
+ * @param challengeSearchMillis How long a Challenge request keeps looking for a harder puzzle.
  */
 class KillerController(
     private val random: Random = Random.Default,
-    private val maxGenerationMillis: Long = 20_000L
+    private val maxGenerationMillis: Long = 20_000L,
+    private val challengeSearchMillis: Long = 6_000L
 ) {
     /**
      * @param candidates Merges compared per round (see [KillerPuzzleGenerator.generate]); zero keeps the first.
@@ -41,7 +43,7 @@ class KillerController(
         GameDifficulty.Easy -> Plan(small, 0)
         GameDifficulty.Moderate -> Plan(small, 3)
         GameDifficulty.Hard -> Plan(small, 8)
-        GameDifficulty.Challenge -> Plan(medium, 40, candidates = 20, searchMillis = 6_000L)
+        GameDifficulty.Challenge -> Plan(medium, 40, candidates = 20, searchMillis = challengeSearchMillis)
         else -> Plan(small, 3)
     }
 
