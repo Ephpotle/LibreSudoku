@@ -33,7 +33,8 @@ import java.io.File
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], qualifiers = "w400dp-h860dp-xxhdpi")
+// a 20:9 phone, the most common shape today
+@Config(sdk = [35], qualifiers = "w400dp-h889dp-xxhdpi")
 class GameScreenshotTest {
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
@@ -73,7 +74,12 @@ class GameScreenshotTest {
         listOf(8 to 8),
     )
 
-    private fun state(filledCages: Int, selected: Cell, notesMode: Boolean): GameUiState {
+    private fun state(
+        filledCages: Int,
+        selected: Cell,
+        notesMode: Boolean,
+        hints: Boolean = true
+    ): GameUiState {
         val cages = cageCells.mapIndexed { index, cells ->
             Cage(
                 id = index,
@@ -92,7 +98,7 @@ class GameScreenshotTest {
             .filter { board[it.row][it.col].value == 0 }
         return GameUiState(
             isLoading = false,
-            settings = GameSettings(mistakesLimit = true, remainingUse = false),
+            settings = GameSettings(mistakesLimit = true, remainingUse = false, disableHints = !hints),
             gameType = GameType.Killer9x9,
             gameDifficulty = GameDifficulty.Challenge,
             gameBoard = board,
@@ -141,4 +147,12 @@ class GameScreenshotTest {
 
     @Test
     fun lightEarly() = shoot("light-early", dark = false, state(filledCages = 0, selected = Cell(3, 4), notesMode = false))
+
+    @Test
+    fun lightNoHint() = shoot("light-no-hint", dark = false, state(filledCages = 6, selected = Cell(3, 4), notesMode = false, hints = false))
+
+    // a short 18:9 phone keeps the single row of keys under the board
+    @Test
+    @Config(qualifiers = "w360dp-h720dp-xxhdpi")
+    fun lightShortPhone() = shoot("light-short", dark = false, state(filledCages = 14, selected = Cell(5, 4), notesMode = false))
 }

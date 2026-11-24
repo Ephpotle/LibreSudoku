@@ -24,6 +24,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import com.kaajjo.libresudoku.ui.game.components.KeyboardItem
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.fillMaxSize
@@ -562,8 +566,134 @@ private fun GameHintContent(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit
 
 @Composable
 private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
-    // tall screens have room to spare, so the number keys grow into bigger targets
     val screenHeight = LocalConfiguration.current.screenHeightDp
+
+    // each tool is drawn by a lambda, so the same tools can sit in a row under the keys or in a
+    // column beside them; [fill] makes the button fill its slot in the column layout
+    val tools = buildList<@Composable (Modifier, Boolean) -> Unit> {
+        add { modifier, fill ->
+            Box(modifier = modifier) {
+                UndoRedoMenu(
+                    expanded = uiState.showUndoRedoMenu,
+                    onDismiss = { onEvent(GameUiEvent.SetUndoRedoMenuVisible(false)) },
+                    onRedoClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Redo)) }
+                )
+                ToolbarItem(
+                    modifier = if (fill) Modifier.fillMaxSize() else Modifier,
+                    painter = painterResource(R.drawable.ic_round_undo_24),
+                    label = stringResource(R.string.toolbar_undo),
+                    onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Undo)) },
+                    onLongClick = { onEvent(GameUiEvent.SetUndoRedoMenuVisible(true)) }
+                )
+            }
+        }
+        if (!uiState.settings.disableHints) {
+            add { modifier, _ ->
+                ToolbarItem(
+                    modifier = modifier,
+                    painter = painterResource(R.drawable.ic_lightbulb_stars_24),
+                    label = stringResource(R.string.toolbar_hint),
+                    onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint)) }
+                )
+            }
+        }
+        add { modifier, fill ->
+            Box(modifier = modifier) {
+                NotesMenu(
+                    expanded = uiState.showNotesMenu,
+                    onDismiss = { onEvent(GameUiEvent.SetNotesMenuVisible(false)) },
+                    onComputeNotesClick = { onEvent(GameUiEvent.ComputeNotes) },
+                    onClearNotesClick = { onEvent(GameUiEvent.ClearNotes) },
+                    renderNotes = uiState.renderNotes,
+                    onRenderNotesClick = { onEvent(GameUiEvent.ToggleRenderNotes) }
+                )
+                ToolbarItem(
+                    modifier = if (fill) Modifier.fillMaxSize() else Modifier,
+                    painter = painterResource(R.drawable.ic_round_edit_24),
+                    label = stringResource(R.string.toolbar_notes),
+                    toggled = uiState.notesToggled,
+                    onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Note)) },
+                    onLongClick = { onEvent(GameUiEvent.SetNotesMenuVisible(true)) }
+                )
+            }
+        }
+        add { modifier, _ ->
+            ToolbarItem(
+                modifier = modifier,
+                painter = painterResource(R.drawable.ic_eraser_24),
+                label = stringResource(R.string.toolbar_erase),
+                toggled = uiState.eraseButtonToggled,
+                onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Remove)) },
+                onLongClick = { onEvent(GameUiEvent.ToggleEraseMode) }
+            )
+        }
+        if (uiState.settings.advancedHintEnabled) {
+            add { modifier, _ ->
+                ToolbarItem(
+                    modifier = modifier,
+                    painter = rememberVectorPainter(Icons.Rounded.AutoAwesome),
+                    label = stringResource(R.string.toolbar_explain),
+                    onClick = { onEvent(GameUiEvent.RequestAdvancedHint) }
+                )
+            }
+        }
+    }
+
+    val remainingUses = uiState.remainingUsesList.takeIf { uiState.settings.remainingUse }
+    // On tall phones a 9x9 game gets a 3x3 keypad, laid out like a box of the puzzle, with the
+    // tools stacked beside it. The keys become large thumb targets and the controls take up the
+    // height that would otherwise be empty bands around the board.
+    if (uiState.size == 9 && screenHeight >= 760 && tools.size <= 4) {
+        val keyHeight = if (screenHeight >= 840) 76.dp else 66.dp
+        val gap = 6.dp
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
+                .height(keyHeight * 3 + gap * 2),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(2.7f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(gap)
+            ) {
+                (1..9).chunked(3).forEach { rowNumbers ->
+                    Row(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(gap)
+                    ) {
+                        rowNumbers.forEach { number ->
+                            val uses = remainingUses?.getOrNull(number - 1)
+                            val hide = uses != null && uses <= 0
+                            KeyboardItem(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .alpha(if (hide) 0f else 1f),
+                                number = number,
+                                remainingUses = uses,
+                                onClick = { if (!hide) onEvent(GameUiEvent.NumberTapped(it)) },
+                                onLongClick = {
+                                    if (!hide) onEvent(GameUiEvent.NumberTapped(it, longTap = true))
+                                },
+                                selected = number == uiState.digitFirstNumber,
+                                notesMode = uiState.notesToggled
+                            )
+                        }
+                    }
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(gap)
+            ) {
+                tools.forEach { tool -> tool(Modifier.weight(1f).fillMaxWidth(), true) }
+            }
+        }
+        return
+    }
+
+    // tall screens have room to spare, so the number keys grow into bigger targets
     val keyMinHeight = when {
         screenHeight >= 800 -> 80.dp
         screenHeight >= 720 -> 68.dp
@@ -575,7 +705,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
         DefaultGameKeyboard(
             itemModifier = Modifier.heightIn(min = keyMinHeight),
             size = uiState.size,
-            remainingUses = uiState.remainingUsesList.takeIf { uiState.settings.remainingUse },
+            remainingUses = remainingUses,
             onClick = { onEvent(GameUiEvent.NumberTapped(it)) },
             onLongClick = { onEvent(GameUiEvent.NumberTapped(it, longTap = true)) },
             selected = uiState.digitFirstNumber,
@@ -585,60 +715,7 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                UndoRedoMenu(
-                    expanded = uiState.showUndoRedoMenu,
-                    onDismiss = { onEvent(GameUiEvent.SetUndoRedoMenuVisible(false)) },
-                    onRedoClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Redo)) }
-                )
-                ToolbarItem(
-                    painter = painterResource(R.drawable.ic_round_undo_24),
-                    label = stringResource(R.string.toolbar_undo),
-                    onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Undo)) },
-                    onLongClick = { onEvent(GameUiEvent.SetUndoRedoMenuVisible(true)) }
-                )
-            }
-            if (!uiState.settings.disableHints) {
-                ToolbarItem(
-                    modifier = Modifier.weight(1f),
-                    painter = painterResource(R.drawable.ic_lightbulb_stars_24),
-                    label = stringResource(R.string.toolbar_hint),
-                    onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint)) }
-                )
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                NotesMenu(
-                    expanded = uiState.showNotesMenu,
-                    onDismiss = { onEvent(GameUiEvent.SetNotesMenuVisible(false)) },
-                    onComputeNotesClick = { onEvent(GameUiEvent.ComputeNotes) },
-                    onClearNotesClick = { onEvent(GameUiEvent.ClearNotes) },
-                    renderNotes = uiState.renderNotes,
-                    onRenderNotesClick = { onEvent(GameUiEvent.ToggleRenderNotes) }
-                )
-                ToolbarItem(
-                    painter = painterResource(R.drawable.ic_round_edit_24),
-                    label = stringResource(R.string.toolbar_notes),
-                    toggled = uiState.notesToggled,
-                    onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Note)) },
-                    onLongClick = { onEvent(GameUiEvent.SetNotesMenuVisible(true)) }
-                )
-            }
-            ToolbarItem(
-                modifier = Modifier.weight(1f),
-                painter = painterResource(R.drawable.ic_eraser_24),
-                label = stringResource(R.string.toolbar_erase),
-                toggled = uiState.eraseButtonToggled,
-                onClick = { onEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Remove)) },
-                onLongClick = { onEvent(GameUiEvent.ToggleEraseMode) }
-            )
-            if (uiState.settings.advancedHintEnabled) {
-                ToolbarItem(
-                    modifier = Modifier.weight(1f),
-                    painter = rememberVectorPainter(Icons.Rounded.AutoAwesome),
-                    label = stringResource(R.string.toolbar_explain),
-                    onClick = { onEvent(GameUiEvent.RequestAdvancedHint) }
-                )
-            }
+            tools.forEach { tool -> tool(Modifier.weight(1f), false) }
         }
     }
 }
