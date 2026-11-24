@@ -25,7 +25,7 @@ import com.kaajjo.libresudoku.data.database.model.SudokuBoard
 
 @Database(
     entities = [Record::class, SudokuBoard::class, SavedGame::class, Folder::class],
-    version = 8,
+    version = 9,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -69,13 +69,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** The player's own "how hard did this feel" answer after a game. NULL means not answered. */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE saved_game ADD COLUMN felt TEXT DEFAULT NULL")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             if (INSTANCE == null) {
                 INSTANCE = Room.databaseBuilder(
                     context,
                     AppDatabase::class.java,
                     "main_database"
-                ).addMigrations(MIGRATION_6_7, MIGRATION_7_8).build()
+                ).addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).build()
             }
 
             return INSTANCE as AppDatabase

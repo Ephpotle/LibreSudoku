@@ -180,4 +180,10 @@ sealed interface GameUiEvent {
      * Retries loading the game after a previous loading failure
      */
     data object RetryLoading : GameUiEvent
+
+    /**
+     * The player answered "how hard did this feel?" after the game. Selecting the current answer again clears it.
+     * Only accepted once the game has ended, so it can never be part of solving.
+     */
+    data class SetFelt(val felt: String) : GameUiEvent
 }
