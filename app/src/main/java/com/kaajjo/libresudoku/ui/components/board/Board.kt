@@ -153,7 +153,7 @@ fun Board(
         val paperColor = if (isDarkBoard) Paper.Dark else Paper.Light
         val printColor = if (isDarkBoard) Paper.PrintDark else Paper.PrintLight
         val thinLineColor = if (isKiller) printColor.copy(alpha = 0.16f) else boardColors.thinLineColor
-        val notesColor = if (isKiller) printColor.copy(alpha = 0.72f) else boardColors.notesColor
+        val notesColor = if (isKiller) printColor.copy(alpha = 0.9f) else boardColors.notesColor
         val sumColor = if (isKiller) printColor else foregroundColor
 
         // highlight (cells)
@@ -172,24 +172,22 @@ fun Board(
                 }
             }
         }
-        val noteSizePx = with(LocalDensity.current) { (cellSizeDivWidth * 0.8f).toSp().toPx() }
-        val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.2f }
+        // pencil marks on killer boards are a little larger, so they stay legible next to the sums
+        val noteSizePx = with(LocalDensity.current) {
+            (cellSizeDivWidth * if (isKiller) 0.9f else 0.8f).toSp().toPx()
+        }
+        val killerSumSizePx = with(LocalDensity.current) { noteSizePx * 1.25f }
 
         val thinLineWidth = with(LocalDensity.current) { 1.3.dp.toPx() }
         // killer boards need box borders that clearly differ from the cage outlines,
         // so they are thicker and drawn in the full number colour
-        val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 2.4.dp else 1.3.dp).toPx() }
+        val thickLineWidth = with(LocalDensity.current) { (if (isKiller) 3.2.dp else 1.3.dp).toPx() }
         // box lines are the heaviest print on the page; cage outlines are thinner and lighter
         val boxLineColor = if (isKiller) printColor else thickLineColor
-        val cageLineWidth = with(LocalDensity.current) { 1.4.dp.toPx() }
-        val cageLineColor = printColor.copy(alpha = 0.78f)
-
-        // neighbouring cages get slightly different shades of graphite wash, never colours,
-        // so the shapes read without adding meaning-free colour noise
-        val cageTints = remember(printColor) {
-            listOf(0.025f, 0.05f, 0.075f, 0.1f).map { printColor.copy(alpha = it) }
-        }
-        val cageTintIndex = remember(cages) { cageTintIndices(cages, cageTints.size) }
+        // cage outlines are solid, full-strength print (as asked for in #6); the outlines alone
+        // carry the cage shapes, so cages get no background wash
+        val cageLineWidth = with(LocalDensity.current) { 1.1.dp.toPx() }
+        val cageLineColor = printColor
 
         // the cage of the selected cell is outlined more strongly, so its shape is easy to follow
         val selectedCageIndex = remember(cages, selectedCell.row, selectedCell.col) {
@@ -269,7 +267,8 @@ fun Board(
                 }
             }
         }
-        val settledCageLineColor = printColor.copy(alpha = 0.15f)
+        // a filled cage steps back but stays easy to trace
+        val settledCageLineColor = printColor.copy(alpha = 0.45f)
         // cells that carry a cage sum; only these give up room for it
         val sumCells = remember(cages) { cages.map { it.labelCell().let { c -> c.row to c.col } }.toSet() }
 
@@ -442,17 +441,6 @@ fun Board(
 
             if (isKiller) {
                 drawRoundRect(color = paperColor, cornerRadius = cornerRadius)
-            }
-            // cage tints go first so selection and highlights stay visible on top of them;
-            // a filled cage loses its wash, so the solved part of the page goes quiet
-            cages.forEachIndexed { index, cage ->
-                if (!filledCages.getOrElse(index) { false }) {
-                    drawKillerCageTint(
-                        cage = cage,
-                        cellSize = cellSize,
-                        color = cageTints[cageTintIndex[index]]
-                    )
-                }
             }
             if (selectedCageIndex >= 0) {
                 drawKillerCageTint(
@@ -648,7 +636,7 @@ fun Board(
 
             if (cages.isNotEmpty()) {
                 val labelPadding = cellSize * 0.06f
-                val settledSumPaint = Paint(killerSumPaint).apply { alpha = 110 }
+                val settledSumPaint = Paint(killerSumPaint).apply { alpha = 150 }
                 cages.forEachIndexed { index, cage ->
                     val isSelectedCage = index == selectedCageIndex
                     val isSettled = !isSelectedCage && filledCages.getOrElse(index) { false }

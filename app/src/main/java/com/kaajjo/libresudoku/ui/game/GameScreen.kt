@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -54,9 +56,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -226,6 +230,21 @@ private fun GameScreenBody(
     )
 
     // A short bounce of the board when the puzzle is solved
+    // the mistakes pill stays neutral and only turns red for a moment after a new mistake;
+    // a game loaded with earlier mistakes does not flash
+    var seenMistakes by remember { mutableStateOf<Int?>(null) }
+    var mistakeFlash by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.mistakesCount, uiState.isLoading) {
+        if (uiState.isLoading) return@LaunchedEffect
+        val seen = seenMistakes
+        seenMistakes = uiState.mistakesCount
+        if (seen != null && uiState.mistakesCount > seen) {
+            mistakeFlash = true
+            delay(1600)
+            mistakeFlash = false
+        }
+    }
+
     val winPulse = remember { Animatable(1f) }
     LaunchedEffect(celebration) {
         if (celebration > 0) {
@@ -331,17 +350,16 @@ private fun GameScreenBody(
         }
 
         Column(
-            // level, time and board sit right under the app bar; the controls sit at the
-            // bottom in thumb reach, and any spare height goes between the two
+            // the controls sit at the bottom in thumb reach; the level, time and board sit
+            // above them as one block
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPaddings)
-                .padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
+                .padding(start = 4.dp, end = 4.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            // spare height is shared above and below the level, time and board, more of it below,
-            // so they sit near the middle and the controls stay in thumb reach
-            Spacer(modifier = Modifier.weight(0.6f))
+            // the pills are a header under the app bar; the board is centred in the space between
+            // them and the keys, and on tall phones the keys grow, so no gap reads as missing content
             AnimatedVisibility(visible = !uiState.endGame) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -360,7 +378,7 @@ private fun GameScreenBody(
                                 PreferencesConstants.MISTAKES_LIMIT
                             ),
                             icon = Icons.Rounded.Close,
-                            emphasized = uiState.mistakesCount > 0
+                            emphasized = mistakeFlash
                         )
                     }
                     AnimatedVisibility(visible = settings.timerEnabled || uiState.endGame) {
@@ -373,6 +391,7 @@ private fun GameScreenBody(
                 }
             }
 
+            Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     AnimatedVisibility(
@@ -543,10 +562,18 @@ private fun GameHintContent(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit
 
 @Composable
 private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
+    // tall screens have room to spare, so the number keys grow into bigger targets
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val keyMinHeight = when {
+        screenHeight >= 800 -> 80.dp
+        screenHeight >= 720 -> 68.dp
+        else -> 0.dp
+    }
     Column(
         verticalArrangement = if (uiState.settings.funKeyboardOverNum) ReverseArrangement else Arrangement.Top
     ) {
         DefaultGameKeyboard(
+            itemModifier = Modifier.heightIn(min = keyMinHeight),
             size = uiState.size,
             remainingUses = uiState.remainingUsesList.takeIf { uiState.settings.remainingUse },
             onClick = { onEvent(GameUiEvent.NumberTapped(it)) },
