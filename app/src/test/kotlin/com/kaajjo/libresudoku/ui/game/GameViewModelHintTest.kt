@@ -62,6 +62,7 @@ class GameViewModelHintTest {
             appSettingsManager.setInputMethod(0)
             appSettingsManager.setRemainingUse(false)
             appSettingsManager.setMistakesLimit(true)
+            appSettingsManager.setHintsDisabled(false)
             // check for rules violations
             appSettingsManager.setHighlightMistakes(1)
         }
