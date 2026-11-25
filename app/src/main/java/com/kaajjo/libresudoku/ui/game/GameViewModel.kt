@@ -10,6 +10,7 @@ import com.kaajjo.libresudoku.core.PreferencesConstants
 import com.kaajjo.libresudoku.core.qqwing.QQWingController
 import com.kaajjo.libresudoku.core.qqwing.advanced_hint.AdvancedHint
 import com.kaajjo.libresudoku.ui.game.models.AidUse
+import com.kaajjo.libresudoku.data.database.model.FeltDifficulty
 import com.kaajjo.libresudoku.data.database.model.GameEndReason
 import com.kaajjo.libresudoku.BuildConfig
 import com.kaajjo.libresudoku.core.utils.GameState
@@ -192,6 +193,7 @@ class GameViewModel @Inject constructor(
             GameUiEvent.ComputeNotes -> computeNotes()
             GameUiEvent.ClearNotes -> clearNotes()
             GameUiEvent.ExportBoard -> exportBoard()
+            is GameUiEvent.SetFelt -> setFelt(event.felt)
         }
 
         onGameStateChanged(previous)
@@ -402,6 +404,7 @@ class GameViewModel @Inject constructor(
                         endGame = saved?.completed == true,
                         giveUp = saved?.giveUp == true,
                         endReason = saved?.endReason,
+                        felt = saved?.felt,
                         aidUse = if (saved == null) AidUse() else saved.aidUse(),
                         remainingUsesList = countRemainingUses(restoredBoard)
                     )
@@ -650,6 +653,12 @@ class GameViewModel @Inject constructor(
         if (!giveUp) produceSideEffect(GameUiSideEffect.GameWon(playSound = state.settings.winSound))
     }
 
+    private fun setFelt(felt: String) {
+        if (!state.endGame || felt !in FeltDifficulty.all) return
+        _uiState.update { it.copy(felt = if (it.felt == felt) null else felt) }
+        queueSave()
+    }
+
     private fun startTimer() {
         if (!screenResumed || !playRequested || state.isLoading || state.loadError || state.endGame ||
             state.settings.firstGame || state.restartDialog || state.giveUpDialog || state.mistakesLimitDialog ||
@@ -708,6 +717,7 @@ class GameViewModel @Inject constructor(
             },
             tryAgainUsed = aid?.tryAgain,
             endReason = snapshot.endReason,
+            felt = snapshot.felt,
             appVersionCode = if (aid == null) existing?.appVersionCode else existing?.appVersionCode ?: BuildConfig.VERSION_CODE
         )
         if (existing == null) savedGameRepository.insert(saved) else savedGameRepository.update(saved)

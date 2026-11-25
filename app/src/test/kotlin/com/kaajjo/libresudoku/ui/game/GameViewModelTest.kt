@@ -6,6 +6,7 @@ import com.kaajjo.libresudoku.core.Note
 import com.kaajjo.libresudoku.core.qqwing.GameDifficulty
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.core.qqwing.advanced_hint.AdvancedHintSettings
+import com.kaajjo.libresudoku.data.database.model.FeltDifficulty
 import com.kaajjo.libresudoku.data.database.model.GameEndReason
 import com.kaajjo.libresudoku.data.database.model.Record
 import com.kaajjo.libresudoku.data.database.model.SavedGame
@@ -47,6 +48,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -477,6 +479,53 @@ class GameViewModelTest {
         runCurrent()
         assertEquals("50" + SOLUTION.drop(2), persistedGame?.currentBoard)
         assertEquals(1, effects.count { it == GameUiSideEffect.SaveFailed })
+    }
+
+    @Test
+    fun `how hard it felt is ignored while the game is still being played`() = runGameTest {
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.SetFelt(FeltDifficulty.HARDER))
+        runCurrent()
+
+        assertNull(viewModel.uiState.value.felt)
+        assertNull(persistedGame?.felt)
+    }
+
+    @Test
+    fun `how hard it felt is saved after a loss and can be changed or cleared`() = runGameTest {
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.ShowGiveUpDialog)
+        viewModel.sendEvent(GameUiEvent.ConfirmGiveUp)
+        runCurrent()
+        val finishedAt = persistedGame!!.finishedAt
+
+        viewModel.sendEvent(GameUiEvent.SetFelt(FeltDifficulty.HARDER))
+        runCurrent()
+        assertEquals(FeltDifficulty.HARDER, persistedGame!!.felt)
+
+        viewModel.sendEvent(GameUiEvent.SetFelt(FeltDifficulty.RIGHT))
+        runCurrent()
+        assertEquals(FeltDifficulty.RIGHT, persistedGame!!.felt)
+
+        viewModel.sendEvent(GameUiEvent.SetFelt(FeltDifficulty.RIGHT))
+        runCurrent()
+        assertNull(persistedGame!!.felt)
+
+        // answering must not change how or when the game ended
+        assertEquals(GameEndReason.GAVE_UP, persistedGame!!.endReason)
+        assertEquals(finishedAt, persistedGame!!.finishedAt)
+        assertTrue(persistedGame!!.completed)
+    }
+
+    @Test
+    fun `an unknown answer is ignored`() = runGameTest {
+        val viewModel = loadedGame()
+        viewModel.sendEvent(GameUiEvent.ShowGiveUpDialog)
+        viewModel.sendEvent(GameUiEvent.ConfirmGiveUp)
+        viewModel.sendEvent(GameUiEvent.SetFelt("impossible"))
+        runCurrent()
+
+        assertNull(viewModel.uiState.value.felt)
     }
 
     @Test

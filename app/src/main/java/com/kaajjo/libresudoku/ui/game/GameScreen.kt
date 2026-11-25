@@ -464,7 +464,9 @@ private fun GameScreenBody(
                                 giveUp = uiState.giveUp,
                                 notesTaken = uiState.notesTaken,
                                 records = uiState.allRecords,
-                                timeText = uiState.timeText
+                                timeText = uiState.timeText,
+                                felt = uiState.felt,
+                                onFeltSelected = { onEvent(GameUiEvent.SetFelt(it)) }
                             )
                         }
                     }

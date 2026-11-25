@@ -49,6 +49,8 @@ data class SavedGame(
     @ColumnInfo(name = "end_reason") val endReason: String? = null,
     /** Build the game was first saved with, kept across app updates. */
     @ColumnInfo(name = "app_version_code") val appVersionCode: Int? = null,
+    /** How hard the finished game felt to the player: see [FeltDifficulty]; NULL when not answered. */
+    @ColumnInfo(name = "felt") val felt: String? = null,
 ) {
     /** True when the game is known to have been played without any aid, false when one was used, null when unknown. */
     val unassisted: Boolean?
@@ -66,4 +68,12 @@ object GameEndReason {
     const val MISTAKE_LIMIT = "mistake_limit"
     /** Left unfinished when a new game was started. */
     const val ABANDONED = "abandoned"
+}
+
+/** Stored values of [SavedGame.felt], the player's own answer after a game. */
+object FeltDifficulty {
+    const val EASIER = "easier"
+    const val RIGHT = "right"
+    const val HARDER = "harder"
+    val all = listOf(EASIER, RIGHT, HARDER)
 }

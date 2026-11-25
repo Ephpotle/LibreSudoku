@@ -51,6 +51,7 @@ import com.kaajjo.libresudoku.data.database.model.Record
  * @property allRecords Completion records matching the loaded game type and difficulty.
  * @property aidUse Aids used over the whole game, kept across restarts and reloads; null when unknown
  * because the game was saved before aid use was recorded.
+ * @property felt The player's answer to "how hard did this feel" after the game, one of the FeltDifficulty values, or null
  * @property endReason How the game ended, one of the GameEndReason values, or null while playing.
  * @property size The number of rows and columns in [gameBoard].
  */
@@ -90,7 +91,8 @@ data class GameUiState(
     val advancedHintData: AdvancedHintData? = null,
     val allRecords: List<Record> = emptyList(),
     val aidUse: AidUse? = AidUse(),
-    val endReason: String? = null
+    val endReason: String? = null,
+    val felt: String? = null
 ) {
     val size: Int get() = gameBoard.size
 }
