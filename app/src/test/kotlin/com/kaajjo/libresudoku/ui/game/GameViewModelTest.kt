@@ -69,7 +69,7 @@ class GameViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        stubSettings(GameSettings(inputMethod = 0, remainingUse = false))
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false, disableHints = false))
         coEvery { boardRepository.get(BOARD_ID) } returns board()
         every { recordRepository.getAll(any(), any()) } returns flowOf(emptyList())
         coEvery { savedGameRepository.get(BOARD_ID) } answers { persistedGame }
@@ -115,6 +115,21 @@ class GameViewModelTest {
         runCurrent()
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(0, viewModel.uiState.value.gameBoard[0][0].value)
+    }
+
+    @Test
+    fun `hints and compute notes do nothing by default`() = runGameTest {
+        stubSettings(GameSettings(inputMethod = 0, remainingUse = false))
+        val viewModel = loadedGame()
+        assertTrue(viewModel.uiState.value.settings.disableHints)
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        viewModel.sendEvent(GameUiEvent.ToolbarClicked(ToolBarItem.Hint))
+        viewModel.sendEvent(GameUiEvent.ComputeNotes)
+        runCurrent()
+
+        assertEquals(0, viewModel.uiState.value.gameBoard[0][0].value)
+        assertEquals(0, viewModel.uiState.value.hintsUsed)
+        assertTrue(viewModel.uiState.value.notes.isEmpty())
     }
 
     @Test

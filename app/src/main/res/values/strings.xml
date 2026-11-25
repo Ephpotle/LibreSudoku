@@ -57,7 +57,7 @@
     <string name="pref_mistakes_limit">Mistakes limit</string>
     <string name="pref_mistakes_limit_summ">Game over after 3 mistakes</string>
     <string name="pref_disable_hints">Disable hints</string>
-    <string name="pref_disable_hints_summ">Don\'t like hints? Disable them entirely.</string>
+    <string name="pref_disable_hints_summ">Hides Hint and Compute notes, so the solving is all yours.</string>
     <string name="pref_show_timer">Show timer</string>
     <string name="pref_reset_timer">Reset the timer on game reset</string>
     <string name="pref_assistance">Assistance</string>

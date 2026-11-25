@@ -325,7 +325,7 @@ class GameViewModel @Inject constructor(
     }
 
     private fun computeNotes() {
-        if (!state.gamePlaying) return
+        if (!state.gamePlaying || state.settings.disableHints) return
         _uiState.update {
             it.copy(
                 notes = sudokuUtils.computeNotes(it.gameBoard, it.gameType),
