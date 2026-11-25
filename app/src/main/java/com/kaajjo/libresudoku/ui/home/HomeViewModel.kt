@@ -6,7 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kaajjo.libresudoku.core.generator.stock.ExtremeKillerStock
 import com.kaajjo.libresudoku.core.qqwing.GameDifficulty
+import com.kaajjo.libresudoku.core.qqwing.GamePuzzleGenerator
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.ui.components.generation.GenerationSession
 import com.kaajjo.libresudoku.core.utils.SudokuParser
@@ -20,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -29,8 +32,18 @@ class HomeViewModel
 @Inject constructor(
     private val appSettingsManager: AppSettingsManager,
     private val boardRepository: BoardRepository,
-    private val savedGameRepository: SavedGameRepository
+    private val savedGameRepository: SavedGameRepository,
+    private val extremeStock: ExtremeKillerStock
 ) : ViewModel() {
+    private val generator = GamePuzzleGenerator()
+
+    init {
+        // Only players who last chose Extreme killer pay for the background search.
+        viewModelScope.launch {
+            val (difficulty, type) = appSettingsManager.lastSelectedGameDifficultyType.first()
+            if (extremeStock.serves(type, difficulty)) extremeStock.refill()
+        }
+    }
 
     val lastSavedGame = savedGameRepository.getLast()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -63,7 +76,10 @@ class HomeViewModel
     var selectedDifficulty by mutableStateOf(difficulties.first())
     var selectedType by mutableStateOf(types.first())
 
-    val generation = GenerationSession(viewModelScope, onError = { exception ->
+    val generation = GenerationSession(viewModelScope, generate = { type, difficulty ->
+        (if (extremeStock.serves(type, difficulty)) extremeStock.take() else null)
+            ?: generator.generate(type, difficulty)
+    }, onError = { exception ->
         Log.e(TAG, "Unable to generate or save a Sudoku puzzle", exception)
     })
 
