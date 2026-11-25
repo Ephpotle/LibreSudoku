@@ -102,6 +102,7 @@ fun NotesMenu(
     renderNotes: Boolean,
     onRenderNotesClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showComputeNotes: Boolean = true,
 ) {
     MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = MaterialTheme.shapes.large)) {
         DropdownMenu(
@@ -109,13 +110,15 @@ fun NotesMenu(
             expanded = expanded,
             onDismissRequest = { onDismiss() }
         ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.action_compute_notes)) },
-                onClick = {
-                    onComputeNotesClick()
-                    onDismiss()
-                }
-            )
+            if (showComputeNotes) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_compute_notes)) },
+                    onClick = {
+                        onComputeNotesClick()
+                        onDismiss()
+                    }
+                )
+            }
             DropdownMenuItem(
                 text = {
                     Text(stringResource(R.string.action_clear_notes))
