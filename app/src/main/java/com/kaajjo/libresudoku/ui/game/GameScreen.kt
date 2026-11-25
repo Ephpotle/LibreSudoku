@@ -21,6 +21,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -353,6 +354,9 @@ private fun GameScreenBody(
             return@Scaffold
         }
 
+        // with the 3x3 keypad the board sits right under the pills and the keypad grows into the
+        // rest of the height; otherwise the board is centred between the pills and the keys
+        val keypadGrid = useKeypadGrid(uiState, LocalConfiguration.current.screenHeightDp)
         Column(
             // the controls sit at the bottom in thumb reach; the level, time and board sit
             // above them as one block
@@ -395,7 +399,7 @@ private fun GameScreenBody(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            if (!keypadGrid) Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     AnimatedVisibility(
@@ -447,13 +451,21 @@ private fun GameScreenBody(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            if (!keypadGrid) Spacer(modifier = Modifier.weight(1f))
 
-            AnimatedContent(uiState.advancedHintMode, label = "Advanced hint mode") { hintMode ->
+            AnimatedContent(
+                targetState = uiState.advancedHintMode,
+                modifier = if (keypadGrid) Modifier.weight(1f) else Modifier,
+                label = "Advanced hint mode"
+            ) { hintMode ->
                 if (hintMode) {
                     GameHintContent(uiState, onEvent)
                 } else {
-                    AnimatedContent(!uiState.endGame, label = "Game controls") { playing ->
+                    AnimatedContent(
+                        targetState = !uiState.endGame,
+                        modifier = if (keypadGrid) Modifier.fillMaxSize() else Modifier,
+                        label = "Game controls"
+                    ) { playing ->
                         if (playing) {
                             GameControls(uiState, onEvent)
                         } else {
@@ -647,51 +659,62 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
     // On tall phones a 9x9 game gets a 3x3 keypad, laid out like a box of the puzzle, with the
     // tools stacked beside it. The keys become large thumb targets and the controls take up the
     // height that would otherwise be empty bands around the board.
-    if (uiState.size == 9 && screenHeight >= 760 && tools.size <= 4) {
-        val keyHeight = if (screenHeight >= 840) 76.dp else 66.dp
-        val gap = 6.dp
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp)
-                .height(keyHeight * 3 + gap * 2),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    if (useKeypadGrid(uiState, screenHeight)) {
+        // the keypad takes the height left under the board, up to keys a third taller than
+        // wide; it sits at the bottom, in thumb reach
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize().padding(bottom = 4.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Column(
-                modifier = Modifier.weight(2.7f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(gap)
+            val gap = 6.dp
+            val keyWidth = ((maxWidth - 8.dp) * (2.7f / 3.7f) - gap * 2) / 3
+            val keyHeight = if (constraints.hasBoundedHeight) {
+                minOf((maxHeight - gap * 2) / 3, keyWidth * 1.3f).coerceAtLeast(56.dp)
+            } else {
+                76.dp
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(keyHeight * 3 + gap * 2),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                (1..9).chunked(3).forEach { rowNumbers ->
-                    Row(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(gap)
-                    ) {
-                        rowNumbers.forEach { number ->
-                            val uses = remainingUses?.getOrNull(number - 1)
-                            val hide = uses != null && uses <= 0
-                            KeyboardItem(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .alpha(if (hide) 0f else 1f),
-                                number = number,
-                                remainingUses = uses,
-                                onClick = { if (!hide) onEvent(GameUiEvent.NumberTapped(it)) },
-                                onLongClick = {
-                                    if (!hide) onEvent(GameUiEvent.NumberTapped(it, longTap = true))
-                                },
-                                selected = number == uiState.digitFirstNumber,
-                                notesMode = uiState.notesToggled
-                            )
+                Column(
+                    modifier = Modifier.weight(2.7f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(gap)
+                ) {
+                    (1..9).chunked(3).forEach { rowNumbers ->
+                        Row(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(gap)
+                        ) {
+                            rowNumbers.forEach { number ->
+                                val uses = remainingUses?.getOrNull(number - 1)
+                                val hide = uses != null && uses <= 0
+                                KeyboardItem(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .alpha(if (hide) 0f else 1f),
+                                    number = number,
+                                    remainingUses = uses,
+                                    onClick = { if (!hide) onEvent(GameUiEvent.NumberTapped(it)) },
+                                    onLongClick = {
+                                        if (!hide) onEvent(GameUiEvent.NumberTapped(it, longTap = true))
+                                    },
+                                    selected = number == uiState.digitFirstNumber,
+                                    notesMode = uiState.notesToggled
+                                )
+                            }
                         }
                     }
                 }
-            }
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(gap)
-            ) {
-                tools.forEach { tool -> tool(Modifier.weight(1f).fillMaxWidth(), true) }
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(gap)
+                ) {
+                    tools.forEach { tool -> tool(Modifier.weight(1f).fillMaxWidth(), true) }
+                }
             }
         }
         return
@@ -722,6 +745,14 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
             tools.forEach { tool -> tool(Modifier.weight(1f), false) }
         }
     }
+}
+
+/** A 9x9 game on a tall phone, with at most four tools, gets the 3x3 keypad */
+private fun useKeypadGrid(uiState: GameUiState, screenHeightDp: Int): Boolean {
+    val tools = 3 +
+        (if (uiState.settings.disableHints) 0 else 1) +
+        (if (uiState.settings.advancedHintEnabled) 1 else 0)
+    return uiState.size == 9 && screenHeightDp >= 760 && tools <= 4
 }
 
 /**

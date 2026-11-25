@@ -155,4 +155,14 @@ class GameScreenshotTest {
     @Test
     @Config(qualifiers = "w360dp-h720dp-xxhdpi")
     fun lightShortPhone() = shoot("light-short", dark = false, state(filledCages = 14, selected = Cell(5, 4), notesMode = false))
+
+    // just over the keypad threshold, where the keys are at their smallest
+    @Test
+    @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun lightKeypadThreshold() = shoot("light-780", dark = false, state(filledCages = 14, selected = Cell(5, 4), notesMode = false, hints = false))
+
+    // a long 21:9 phone, where the keys reach their tallest
+    @Test
+    @Config(qualifiers = "w411dp-h960dp-xxhdpi")
+    fun lightLongPhone() = shoot("light-long", dark = false, state(filledCages = 14, selected = Cell(5, 4), notesMode = false))
 }
