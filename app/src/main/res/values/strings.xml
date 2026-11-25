@@ -74,6 +74,10 @@
     <string name="pref_auto_erase_notes">Auto erase notes</string>
     <string name="pref_other">Other</string>
     <string name="pref_keep_screen_on">Keep screen awake</string>
+    <string name="felt_question">How hard did this feel?</string>
+    <string name="felt_easier">Easier than its level</string>
+    <string name="felt_right">About right</string>
+    <string name="felt_harder">Harder than its level</string>
     <string name="pref_win_sound">Win sound</string>
     <string name="pref_win_sound_summ">Play a short chime when you solve a puzzle. Stays quiet when the phone is on silent or vibrate</string>
     <string name="pref_reset_tipcards">Reset all tutorial tips</string>

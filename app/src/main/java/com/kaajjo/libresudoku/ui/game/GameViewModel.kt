@@ -9,6 +9,10 @@ import com.kaajjo.libresudoku.core.Note
 import com.kaajjo.libresudoku.core.PreferencesConstants
 import com.kaajjo.libresudoku.core.qqwing.QQWingController
 import com.kaajjo.libresudoku.core.qqwing.advanced_hint.AdvancedHint
+import com.kaajjo.libresudoku.ui.game.models.AidUse
+import com.kaajjo.libresudoku.data.database.model.FeltDifficulty
+import com.kaajjo.libresudoku.data.database.model.GameEndReason
+import com.kaajjo.libresudoku.BuildConfig
 import com.kaajjo.libresudoku.core.utils.GameState
 import com.kaajjo.libresudoku.core.utils.SudokuParser
 import com.kaajjo.libresudoku.core.utils.SudokuUtils
@@ -189,6 +193,7 @@ class GameViewModel @Inject constructor(
             GameUiEvent.ComputeNotes -> computeNotes()
             GameUiEvent.ClearNotes -> clearNotes()
             GameUiEvent.ExportBoard -> exportBoard()
+            is GameUiEvent.SetFelt -> setFelt(event.felt)
         }
 
         onGameStateChanged(previous)
@@ -273,7 +278,7 @@ class GameViewModel @Inject constructor(
     }
 
     private fun confirmGiveUp() {
-        if (state.giveUpDialog) finishGame(giveUp = true)
+        if (state.giveUpDialog) finishGame(giveUp = true, reason = GameEndReason.GAVE_UP)
     }
 
     private fun showMistakesLimitDialog() {
@@ -289,13 +294,16 @@ class GameViewModel @Inject constructor(
         if (!state.mistakesLimitDialog) return
         if (undoRedoManager.canUndo()) restoreMove(undoRedoManager.undo())
         _uiState.update {
-            it.copy(mistakesLimitDialog = false, mistakesCount = (it.mistakesCount - 1).coerceAtLeast(0))
+            it.copy(
+                mistakesLimitDialog = false, mistakesCount = (it.mistakesCount - 1).coerceAtLeast(0),
+                aidUse = it.aidUse?.let { aid -> aid.copy(tryAgain = aid.tryAgain + 1) }
+            )
         }
         startTimer()
     }
 
     private fun endGameAfterMistakes() {
-        if (state.mistakesLimitDialog) finishGame(giveUp = true)
+        if (state.mistakesLimitDialog) finishGame(giveUp = true, reason = GameEndReason.MISTAKE_LIMIT)
     }
 
     private fun setMenuVisible(visible: Boolean) {
@@ -318,7 +326,12 @@ class GameViewModel @Inject constructor(
 
     private fun computeNotes() {
         if (!state.gamePlaying || state.settings.disableHints) return
-        _uiState.update { it.copy(notes = sudokuUtils.computeNotes(it.gameBoard, it.gameType)) }
+        _uiState.update {
+            it.copy(
+                notes = sudokuUtils.computeNotes(it.gameBoard, it.gameType),
+                aidUse = it.aidUse?.let { aid -> aid.copy(computedNotes = aid.computedNotes + 1) }
+            )
+        }
         rememberMove()
     }
 
@@ -341,7 +354,7 @@ class GameViewModel @Inject constructor(
                 state.mistakesLimitDialog -> Unit
                 state.settings.mistakesLimit && state.mistakesCount >= PreferencesConstants.MISTAKES_LIMIT ->
                     showMistakesLimitDialog()
-                isCompleted() -> finishGame(giveUp = false)
+                isCompleted() -> finishGame(giveUp = false, reason = GameEndReason.SOLVED)
                 else -> queueSave()
             }
         }
@@ -390,6 +403,9 @@ class GameViewModel @Inject constructor(
                         mistakesCount = saved?.mistakes ?: 0,
                         endGame = saved?.completed == true,
                         giveUp = saved?.giveUp == true,
+                        endReason = saved?.endReason,
+                        felt = saved?.felt,
+                        aidUse = if (saved == null) AidUse() else saved.aidUse(),
                         remainingUsesList = countRemainingUses(restoredBoard)
                     )
                 }
@@ -590,7 +606,12 @@ class GameViewModel @Inject constructor(
         clearNotesAtCell()
         setValueCell(state.solvedBoard[state.currCell.row][state.currCell.col].value, countMistake = false)
         duration += 30.seconds
-        _uiState.update { it.copy(timeText = duration.toFormattedString(), hintsUsed = it.hintsUsed + 1) }
+        _uiState.update {
+            it.copy(
+                timeText = duration.toFormattedString(), hintsUsed = it.hintsUsed + 1,
+                aidUse = it.aidUse?.let { aid -> aid.copy(hints = aid.hints + 1) }
+            )
+        }
         rememberMove()
     }
 
@@ -604,7 +625,7 @@ class GameViewModel @Inject constructor(
                 isLoading = false, settings = it.settings, gameType = it.gameType, gameDifficulty = it.gameDifficulty,
                 gameBoard = board, solvedBoard = it.solvedBoard, cages = it.cages,
                 remainingUsesList = countRemainingUses(board), timeText = duration.toFormattedString(),
-                allRecords = it.allRecords, renderNotes = it.renderNotes
+                allRecords = it.allRecords, renderNotes = it.renderNotes, aidUse = it.aidUse
             )
         }
         undoRedoManager = UndoRedoManager(GameState(state.gameBoard, state.notes))
@@ -618,18 +639,24 @@ class GameViewModel @Inject constructor(
         state.gameBoard[row].indices.all { col -> state.gameBoard[row][col].value == state.solvedBoard[row][col].value }
     }
 
-    private fun finishGame(giveUp: Boolean) {
+    private fun finishGame(giveUp: Boolean, reason: String) {
         if (state.endGame) return
         pauseTimer()
         cancelAdvancedHint()
         _uiState.update {
             it.copy(
-                endGame = true, giveUp = giveUp, currCell = Cell(-1, -1), giveUpDialog = false,
+                endGame = true, giveUp = giveUp, endReason = reason, currCell = Cell(-1, -1), giveUpDialog = false,
                 mistakesLimitDialog = false, showMenu = false
             )
         }
         queueSave(recordCompletion = !giveUp)
         if (!giveUp) produceSideEffect(GameUiSideEffect.GameWon(playSound = state.settings.winSound))
+    }
+
+    private fun setFelt(felt: String) {
+        if (!state.endGame || felt !in FeltDifficulty.all) return
+        _uiState.update { it.copy(felt = if (it.felt == felt) null else felt) }
+        queueSave()
     }
 
     private fun startTimer() {
@@ -668,6 +695,7 @@ class GameViewModel @Inject constructor(
         val snapshot = request.state
         val existing = savedGameRepository.get(request.board.uid)
         val now = ZonedDateTime.now()
+        val aid = snapshot.aidUse
         val saved = SavedGame(
             uid = request.board.uid,
             currentBoard = parser.boardToString(snapshot.gameBoard),
@@ -679,7 +707,18 @@ class GameViewModel @Inject constructor(
             canContinue = !snapshot.endGame,
             lastPlayed = now,
             startedAt = existing?.startedAt ?: now,
-            finishedAt = if (snapshot.endGame) existing?.finishedAt ?: now else null
+            finishedAt = if (snapshot.endGame) existing?.finishedAt ?: now else null,
+            hintsUsed = aid?.hints,
+            advancedHintsUsed = aid?.advancedHints,
+            computedNotesUsed = aid?.computedNotes,
+            mistakeMarking = aid?.let {
+                // Highest highlighting seen while the game was played; settings changed after the end do not count.
+                maxOf(existing?.mistakeMarking ?: 0, if (snapshot.endGame) 0 else snapshot.settings.mistakesMethod)
+            },
+            tryAgainUsed = aid?.tryAgain,
+            endReason = snapshot.endReason,
+            felt = snapshot.felt,
+            appVersionCode = if (aid == null) existing?.appVersionCode else existing?.appVersionCode ?: BuildConfig.VERSION_CODE
         )
         if (existing == null) savedGameRepository.insert(saved) else savedGameRepository.update(saved)
         if (request.recordCompletion) {
@@ -705,7 +744,13 @@ class GameViewModel @Inject constructor(
                     solvedBoard = snapshot.solvedBoard.copyCells(), notes = snapshot.notes, settings = settings
                 ).getEasiestHint()
             }
-            _uiState.update { it.copy(advancedHintData = hint, advancedHintLoading = false) }
+            // Seeing the hint is the aid, whether or not it is applied.
+            _uiState.update {
+                it.copy(
+                    advancedHintData = hint, advancedHintLoading = false,
+                    aidUse = if (hint == null) it.aidUse else it.aidUse?.let { aid -> aid.copy(advancedHints = aid.advancedHints + 1) }
+                )
+            }
         }
     }
 
@@ -749,3 +794,13 @@ private fun List<List<Cell>>.copyCells() = map { row -> row.map { it.copy() } }
 
 private fun <T> Flow<T>.setting(mutation: GameSettings.(T) -> GameSettings): Flow<(GameSettings) -> GameSettings> =
     map { value -> { settings -> settings.mutation(value) } }
+
+/** Aid use stored with this game, or null when it was saved before aid use was recorded. */
+private fun SavedGame.aidUse(): AidUse? {
+    return AidUse(
+        hints = hintsUsed ?: return null,
+        advancedHints = advancedHintsUsed ?: return null,
+        computedNotes = computedNotesUsed ?: return null,
+        tryAgain = tryAgainUsed ?: return null
+    )
+}
