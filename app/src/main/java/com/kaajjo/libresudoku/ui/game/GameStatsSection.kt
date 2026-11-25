@@ -1,6 +1,7 @@
 package com.kaajjo.libresudoku.ui.game
 
 import android.text.format.DateUtils
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,11 +10,15 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kaajjo.libresudoku.R
@@ -28,6 +34,7 @@ import com.kaajjo.libresudoku.core.PreferencesConstants
 import com.kaajjo.libresudoku.core.qqwing.GameDifficulty
 import com.kaajjo.libresudoku.core.qqwing.GameType
 import com.kaajjo.libresudoku.core.utils.toFormattedString
+import com.kaajjo.libresudoku.data.database.model.FeltDifficulty
 import com.kaajjo.libresudoku.data.database.model.Record
 import kotlin.time.toKotlinDuration
 
@@ -44,7 +51,9 @@ fun AfterGameStats(
     notesTaken: Int,
     records: List<Record>,
     timeText: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    felt: String? = null,
+    onFeltSelected: ((String) -> Unit)? = null
 ) {
     Column(modifier) {
         Text(
@@ -111,6 +120,13 @@ fun AfterGameStats(
             }
         }
 
+        if (onFeltSelected != null) {
+            FeltQuestion(
+                felt = felt,
+                onFeltSelected = onFeltSelected,
+                modifier = Modifier.padding(top = if (giveUp) 0.dp else 12.dp)
+            )
+        }
         Text(
             text = stringResource(R.string.statistics),
             style = MaterialTheme.typography.titleMedium,
@@ -204,4 +220,58 @@ fun StatBoxWithBottomPadding(
         icon = icon,
         modifier = modifier.padding(bottom = 8.dp)
     )
+}
+
+/**
+ * One optional question after a game, won or lost: how hard did it feel compared with its level?
+ * Shown only once the game is over, so it never helps with solving. Nothing asks again if it is skipped.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FeltQuestion(
+    felt: String?,
+    onFeltSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val view = LocalView.current
+    Column(modifier) {
+        Text(
+            text = stringResource(R.string.felt_question),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FeltDifficulty.all.forEach { option ->
+                val selected = felt == option
+                FilterChip(
+                    selected = selected,
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onFeltSelected(option)
+                    },
+                    label = {
+                        Text(
+                            stringResource(
+                                when (option) {
+                                    FeltDifficulty.EASIER -> R.string.felt_easier
+                                    FeltDifficulty.HARDER -> R.string.felt_harder
+                                    else -> R.string.felt_right
+                                }
+                            )
+                        )
+                    },
+                    leadingIcon = if (selected) {
+                        {
+                            Icon(
+                                Icons.Rounded.Done,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                        }
+                    } else null
+                )
+            }
+        }
+    }
 }

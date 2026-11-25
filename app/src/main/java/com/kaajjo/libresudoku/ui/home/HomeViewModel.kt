@@ -14,6 +14,7 @@ import com.kaajjo.libresudoku.ui.components.generation.GenerationSession
 import com.kaajjo.libresudoku.core.utils.SudokuParser
 import com.kaajjo.libresudoku.data.database.model.SudokuBoard
 import com.kaajjo.libresudoku.data.datastore.AppSettingsManager
+import com.kaajjo.libresudoku.data.database.model.GameEndReason
 import com.kaajjo.libresudoku.domain.repository.BoardRepository
 import com.kaajjo.libresudoku.domain.repository.SavedGameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -113,7 +114,7 @@ class HomeViewModel
             }
             if (previousGame != null && !previousGame.completed) {
                 withContext(Dispatchers.IO) {
-                    savedGameRepository.update(previousGame.copy(completed = true, canContinue = true))
+                    savedGameRepository.update(previousGame.copy(completed = true, canContinue = true, endReason = GameEndReason.ABANDONED))
                 }
             }
             insertedBoardUid = checkNotNull(storedUid)

@@ -464,7 +464,9 @@ private fun GameScreenBody(
                                 giveUp = uiState.giveUp,
                                 notesTaken = uiState.notesTaken,
                                 records = uiState.allRecords,
-                                timeText = uiState.timeText
+                                timeText = uiState.timeText,
+                                felt = uiState.felt,
+                                onFeltSelected = { onEvent(GameUiEvent.SetFelt(it)) }
                             )
                         }
                     }
@@ -613,7 +615,9 @@ private fun GameControls(uiState: GameUiState, onEvent: (GameUiEvent) -> Unit) {
                     onComputeNotesClick = { onEvent(GameUiEvent.ComputeNotes) },
                     onClearNotesClick = { onEvent(GameUiEvent.ClearNotes) },
                     renderNotes = uiState.renderNotes,
-                    onRenderNotesClick = { onEvent(GameUiEvent.ToggleRenderNotes) }
+                    onRenderNotesClick = { onEvent(GameUiEvent.ToggleRenderNotes) },
+                    // Filling in every candidate is an aid, so it goes with hints.
+                    showComputeNotes = !uiState.settings.disableHints
                 )
                 ToolbarItem(
                     painter = painterResource(R.drawable.ic_round_edit_24),

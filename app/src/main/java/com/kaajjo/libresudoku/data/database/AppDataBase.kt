@@ -25,7 +25,7 @@ import com.kaajjo.libresudoku.data.database.model.SudokuBoard
 
 @Database(
     entities = [Record::class, SudokuBoard::class, SavedGame::class, Folder::class],
-    version = 7,
+    version = 9,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -59,13 +59,30 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Aid-use columns. Existing rows stay NULL, which reads as "unknown", never as unassisted. */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                listOf(
+                    "hints_used INTEGER", "advanced_hints_used INTEGER", "computed_notes_used INTEGER",
+                    "mistake_marking INTEGER", "try_again_used INTEGER", "end_reason TEXT", "app_version_code INTEGER"
+                ).forEach { column -> db.execSQL("ALTER TABLE saved_game ADD COLUMN $column DEFAULT NULL") }
+            }
+        }
+
+        /** The player's own "how hard did this feel" answer after a game. NULL means not answered. */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE saved_game ADD COLUMN felt TEXT DEFAULT NULL")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             if (INSTANCE == null) {
                 INSTANCE = Room.databaseBuilder(
                     context,
                     AppDatabase::class.java,
                     "main_database"
-                ).addMigrations(MIGRATION_6_7).build()
+                ).addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).build()
             }
 
             return INSTANCE as AppDatabase

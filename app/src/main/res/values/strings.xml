@@ -57,7 +57,7 @@
     <string name="pref_mistakes_limit">Mistakes limit</string>
     <string name="pref_mistakes_limit_summ">Game over after 3 mistakes</string>
     <string name="pref_disable_hints">Disable hints</string>
-    <string name="pref_disable_hints_summ">Don\'t like hints? Disable them entirely.</string>
+    <string name="pref_disable_hints_summ">Hides Hint and Compute notes, so the solving is all yours.</string>
     <string name="pref_show_timer">Show timer</string>
     <string name="pref_reset_timer">Reset the timer on game reset</string>
     <string name="pref_assistance">Assistance</string>
@@ -74,6 +74,10 @@
     <string name="pref_auto_erase_notes">Auto erase notes</string>
     <string name="pref_other">Other</string>
     <string name="pref_keep_screen_on">Keep screen awake</string>
+    <string name="felt_question">How hard did this feel?</string>
+    <string name="felt_easier">Easier than its level</string>
+    <string name="felt_right">About right</string>
+    <string name="felt_harder">Harder than its level</string>
     <string name="pref_win_sound">Win sound</string>
     <string name="pref_win_sound_summ">Play a short chime when you solve a puzzle. Stays quiet when the phone is on silent or vibrate</string>
     <string name="pref_reset_tipcards">Reset all tutorial tips</string>
