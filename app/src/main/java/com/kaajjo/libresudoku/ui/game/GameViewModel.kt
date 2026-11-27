@@ -56,6 +56,7 @@ import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
@@ -86,6 +87,9 @@ class GameViewModel @Inject constructor(
     private var initialBoard: List<List<Cell>> = emptyList()
     private var undoRedoManager = UndoRedoManager(GameState(emptyList(), emptyList()))
     private var duration = Duration.ZERO
+    // Thinking time: timer ticks within SavedGame.ACTIVE_WINDOW_MINUTES of the last input. Null when unknown.
+    private var activeDuration: Duration? = Duration.ZERO
+    private var sinceLastInput = Duration.ZERO
     private var timerJob: Job? = null
     private var hintJob: Job? = null
     private var loadJob: Job? = null
@@ -99,6 +103,7 @@ class GameViewModel @Inject constructor(
         val board: SudokuBoard,
         val state: GameUiState,
         val duration: Duration,
+        val activeDuration: Duration?,
         val recordCompletion: Boolean,
         val completed: CompletableDeferred<Unit> = CompletableDeferred()
     )
@@ -161,6 +166,7 @@ class GameViewModel @Inject constructor(
         if (!canHandleEvent(event)) return
 
         val previous = state
+        sinceLastInput = Duration.ZERO
         when (event) {
             GameUiEvent.ScreenResumed -> onScreenResumed()
             GameUiEvent.ScreenPaused -> onScreenPaused()
@@ -390,6 +396,8 @@ class GameViewModel @Inject constructor(
                 boardEntity = entity
                 initialBoard = initial
                 duration = saved?.timer?.toKotlinDuration() ?: Duration.ZERO
+                activeDuration = if (saved == null) Duration.ZERO else saved.activeSeconds?.seconds
+                sinceLastInput = Duration.ZERO
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -617,7 +625,10 @@ class GameViewModel @Inject constructor(
 
     private fun resetGame() {
         cancelAdvancedHint()
-        if (state.settings.resetTimerOnRestart) duration = Duration.ZERO
+        if (state.settings.resetTimerOnRestart) {
+            duration = Duration.ZERO
+            activeDuration = Duration.ZERO
+        }
         overrideInputMethodDF = false
         val board = initialBoard.copyCells()
         _uiState.update {
@@ -670,6 +681,10 @@ class GameViewModel @Inject constructor(
                 delay(50)
                 val previousSeconds = duration.inWholeSeconds
                 duration += 50.milliseconds
+                if (sinceLastInput < SavedGame.ACTIVE_WINDOW_MINUTES.minutes) {
+                    activeDuration = activeDuration?.plus(50.milliseconds)
+                }
+                sinceLastInput += 50.milliseconds
                 if (previousSeconds != duration.inWholeSeconds) {
                     _uiState.update { it.copy(timeText = duration.toFormattedString()) }
                     queueSave()
@@ -687,7 +702,7 @@ class GameViewModel @Inject constructor(
     private fun queueSave(recordCompletion: Boolean = false): CompletableDeferred<Unit>? {
         val entity = boardEntity ?: return null
         if (state.isLoading || state.loadError) return null
-        val request = SaveRequest(entity, state, duration, recordCompletion)
+        val request = SaveRequest(entity, state, duration, activeDuration, recordCompletion)
         return if (saves.trySend(request).isSuccess) request.completed else null
     }
 
@@ -718,6 +733,7 @@ class GameViewModel @Inject constructor(
             tryAgainUsed = aid?.tryAgain,
             endReason = snapshot.endReason,
             felt = snapshot.felt,
+            activeSeconds = request.activeDuration?.inWholeSeconds,
             appVersionCode = if (aid == null) existing?.appVersionCode else existing?.appVersionCode ?: BuildConfig.VERSION_CODE
         )
         if (existing == null) savedGameRepository.insert(saved) else savedGameRepository.update(saved)

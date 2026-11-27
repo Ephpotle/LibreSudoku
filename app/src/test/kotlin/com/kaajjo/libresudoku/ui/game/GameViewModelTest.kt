@@ -544,6 +544,47 @@ class GameViewModelTest {
     }
 
     @Test
+    fun `active time stops counting after five idle minutes while the timer keeps running`() = runGameTest {
+        val viewModel = loadedGame()
+        advanceTimeBy(60_000)
+        runCurrent()
+        viewModel.sendEvent(GameUiEvent.CellTapped(0, 0))
+        advanceTimeBy(10 * 60_000L)
+        runCurrent()
+
+        val saved = persistedGame!!
+        assertEquals(11 * 60L, saved.timer.seconds)
+        // One minute before the tap, then five minutes after it; the last five idle minutes are left out.
+        assertEquals(6 * 60L, saved.activeSeconds)
+    }
+
+    @Test
+    fun `active time continues from a saved game`() = runGameTest {
+        persistedGame = SavedGame(
+            uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
+            timer = java.time.Duration.ofSeconds(600), activeSeconds = 100
+        )
+        loadedGame(playedBefore = true)
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertEquals(110L, persistedGame?.activeSeconds)
+        assertEquals(610L, persistedGame?.timer?.seconds)
+    }
+
+    @Test
+    fun `active time stays unknown for a game started before it was recorded`() = runGameTest {
+        persistedGame = SavedGame(
+            uid = BOARD_ID, currentBoard = "0".repeat(2) + SOLUTION.drop(2), notes = "",
+            timer = java.time.Duration.ofSeconds(600)
+        )
+        loadedGame(playedBefore = true)
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertNull(persistedGame?.activeSeconds)
+        assertEquals(610L, persistedGame?.timer?.seconds)
+    }
+
+    @Test
     fun `a clean game is saved as unassisted with its end reason`() = runGameTest {
         stubSettings(GameSettings(inputMethod = 0, remainingUse = false, mistakesMethod = 0))
         coEvery { boardRepository.get(BOARD_ID) } returns board(emptyCells = 1)
