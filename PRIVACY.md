@@ -1,6 +1,6 @@
-# Privacy policy
+# Killer Ink privacy policy
 
-This policy covers the killer sudoku app published on Google Play under the package name
+This policy covers Killer Ink, the killer sudoku app published on Google Play under the package name
 `se.undersphere.killersudoku`, built from this repository.
 
 **The app does not collect, share or sell any personal data.**
