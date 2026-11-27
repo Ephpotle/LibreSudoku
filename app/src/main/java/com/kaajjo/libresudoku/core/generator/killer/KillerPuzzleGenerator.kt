@@ -49,6 +49,9 @@ object KillerPuzzleGenerator {
      * @param maxMergedSize Largest cage a merge may create.
      * @param candidates When positive, each merge round rates up to this many solvable merges and keeps the one
      *   with the highest effort score, stopping once no merge raises it. When zero, the first solvable merge is kept.
+     * @param singleCells When false, no cage has one cell: ambiguities are repaired by moving a cell into a
+     *   neighbouring cage instead of splitting one off, and bases with a leftover one-cell cage are dropped.
+     *   A one-cell cage shows its digit, so it acts as a given.
      * @param checkpoint Cooperative cancellation or deadline callback; exceptions propagate to the caller.
      * @return A unique puzzle, or null when this attempt did not converge; callers retry with fresh randomness.
      */
@@ -62,9 +65,10 @@ object KillerPuzzleGenerator {
         merges: Int = 0,
         maxMergedSize: Int = geometry.size - 3,
         candidates: Int = 0,
+        singleCells: Boolean = true,
         checkpoint: () -> Unit = {}
     ): GeneratedKiller? {
-        val base = unique(geometry, profile, random, rater, quickNodes, maxNodes, checkpoint) ?: return null
+        val base = unique(geometry, profile, random, rater, quickNodes, maxNodes, singleCells, checkpoint) ?: return null
         if (merges <= 0 || !base.rating.solved) return base
         if (candidates > 0) return climb(base, merges, maxMergedSize, candidates, rater, random, checkpoint)
         return harden(base, merges, maxMergedSize, rater, random, checkpoint)
@@ -72,13 +76,14 @@ object KillerPuzzleGenerator {
 
     private fun unique(
         geometry: SudokuGeometry, profile: CageProfile, random: Random, rater: KillerLogicalRater,
-        quickNodes: Long, maxNodes: Long, checkpoint: () -> Unit
+        quickNodes: Long, maxNodes: Long, singleCells: Boolean, checkpoint: () -> Unit
     ): GeneratedKiller? {
         val engine = DlxEngine(geometry.size, geometry.boxHeight, geometry.boxWidth, random, checkpoint)
         check(engine.solve(IntArray(geometry.cellCount), 1, checkpoint) == 1)
         val solution = engine.solvedBoard
         val topology = Topology.of(geometry)
         val cages = randomCages(topology, solution, profile, random)
+        if (!singleCells && cages.any { it.size == 1 }) return null
         repeat(geometry.cellCount) {
             checkpoint()
             val layout = KillerLayout.fromSolution(geometry, cages, solution)
@@ -102,6 +107,10 @@ object KillerPuzzleGenerator {
                 return GeneratedKiller(layout, solution, rating)
             }
             val other = found.first { !it.contentEquals(solution) }
+            if (!singleCells) {
+                if (!repairWithoutSingleCells(topology, layout, cages, solution, other, random)) return null
+                return@repeat
+            }
             val differing = solution.indices.filter { solution[it] != other[it] && cages[layout.cageOf[it]].size > 1 }
             if (differing.isEmpty()) return null
             val cell = differing[random.nextInt(differing.size)]
@@ -110,6 +119,41 @@ object KillerPuzzleGenerator {
             cages[k] = parts.first; cages += parts.second
         }
         return null
+    }
+
+    /**
+     * Changes the cages where [other] differs from [solution] without creating a one-cell cage: moves a differing
+     * cell into a neighbouring cage, or splits a cage of four or more into halves of at least two.
+     * @return false when no such change exists.
+     */
+    private fun repairWithoutSingleCells(
+        t: Topology, layout: KillerLayout, cages: MutableList<IntArray>, solution: IntArray, other: IntArray,
+        random: Random
+    ): Boolean {
+        val differing = solution.indices.filter { solution[it] != other[it] }.shuffled(random)
+        for (cell in differing) {
+            val k = layout.cageOf[cell]; val from = cages[k]
+            if (from.size >= 3) {
+                val rest = from.filter { it != cell }
+                if (connected(t, rest)) {
+                    val host = neighbours(t, cell).map { layout.cageOf[it] }.distinct().filter { h ->
+                        h != k && cages[h].size < t.n - 3 && cages[h].none { solution[it] == solution[cell] }
+                    }.shuffled(random).firstOrNull()
+                    if (host != null) {
+                        cages[k] = rest.toIntArray(); cages[host] = cages[host] + cell
+                        return true
+                    }
+                }
+            }
+            if (from.size >= 4) {
+                val parts = split(t, from, cell, random)
+                if (parts != null && parts.first.size >= 2 && parts.second.size >= 2) {
+                    cages[k] = parts.first; cages += parts.second
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /**

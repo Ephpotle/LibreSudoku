@@ -64,6 +64,27 @@ class ZeroGivenKillerTest {
     }
 
     @Test
+    fun singleCellsOff_GivesUniquePuzzlesWithoutOneCellCages() {
+        // The Extreme plan: a one-cell cage shows its digit, so these puzzles must have none.
+        val random = Random(27)
+        val profile = CageProfile(intArrayOf(2, 3, 4, 5), intArrayOf(2, 4, 3, 2))
+        var checked = 0; var attempts = 0
+        while (checked < 8 && attempts < 40) {
+            attempts++
+            val generated = KillerPuzzleGenerator.generate(
+                nine, profile, random, merges = 40, candidates = 20, singleCells = false
+            ) ?: continue
+            if (!generated.rating.solved) continue
+            checked++
+            assertTrue(generated.layout.cages.none { it.size == 1 })
+            val found = KillerSolver(generated.layout).solve(2, maxNodes = 50_000_000L)
+            assertEquals(1, found.size)
+            assertArrayEquals(generated.solution, found.single())
+        }
+        assertEquals(8, checked)
+    }
+
+    @Test
     fun generatedPuzzles_AreUniqueAndSolvedByTheRaterAlongTheirSolution() {
         val random = Random(11)
         val profile = CageProfile(intArrayOf(2, 3, 4, 5), intArrayOf(2, 4, 3, 2))
