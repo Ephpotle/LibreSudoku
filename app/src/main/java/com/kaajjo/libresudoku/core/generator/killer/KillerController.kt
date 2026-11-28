@@ -30,10 +30,14 @@ class KillerController(
 ) {
     /**
      * @param candidates Merges compared per round (see [KillerPuzzleGenerator.generate]); zero keeps the first.
+     * @param singleCells False keeps one-cell cages, which show their digit, out of the puzzle.
      * @param searchMillis When positive, keep generating until this much time has passed and return the hardest
      *   matching puzzle found, instead of the first.
      */
-    private class Plan(val profile: CageProfile, val merges: Int, val candidates: Int = 0, val searchMillis: Long = 0)
+    private class Plan(
+        val profile: CageProfile, val merges: Int, val candidates: Int = 0, val searchMillis: Long = 0,
+        val singleCells: Boolean = true
+    )
 
     private val small = CageProfile(intArrayOf(2, 3, 4), intArrayOf(4, 4, 2))
     private val medium = CageProfile(intArrayOf(2, 3, 4, 5), intArrayOf(2, 4, 3, 2))
@@ -43,7 +47,7 @@ class KillerController(
         GameDifficulty.Easy -> Plan(small, 0)
         GameDifficulty.Moderate -> Plan(small, 3)
         GameDifficulty.Hard -> Plan(small, 8)
-        GameDifficulty.Challenge -> Plan(medium, 40, candidates = 20, searchMillis = challengeSearchMillis)
+        GameDifficulty.Challenge -> Plan(medium, 40, candidates = 20, searchMillis = challengeSearchMillis, singleCells = false)
         else -> Plan(small, 3)
     }
 
@@ -74,7 +78,7 @@ class KillerController(
                     checkpoint(); attempts++
                     val generated = KillerPuzzleGenerator.generate(
                         geometry, plan.profile, rng, rater, merges = plan.merges, candidates = plan.candidates,
-                        checkpoint = checkpoint
+                        singleCells = plan.singleCells, checkpoint = checkpoint
                     )
                     if (generated == null || !generated.rating.solved) return@repeat
                     val actual = KillerRatingPolicy.difficulty(geometry.cellCount, generated.rating)
