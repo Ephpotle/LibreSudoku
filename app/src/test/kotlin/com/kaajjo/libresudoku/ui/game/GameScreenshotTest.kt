@@ -78,7 +78,8 @@ class GameScreenshotTest {
         filledCages: Int,
         selected: Cell,
         notesMode: Boolean,
-        hints: Boolean = true
+        hints: Boolean = true,
+        counts: Boolean = false
     ): GameUiState {
         val cages = cageCells.mapIndexed { index, cells ->
             Cage(
@@ -98,7 +99,7 @@ class GameScreenshotTest {
             .filter { board[it.row][it.col].value == 0 }
         return GameUiState(
             isLoading = false,
-            settings = GameSettings(mistakesLimit = true, remainingUse = false, disableHints = !hints),
+            settings = GameSettings(mistakesLimit = true, remainingUse = counts, disableHints = !hints),
             gameType = GameType.Killer9x9,
             gameDifficulty = GameDifficulty.Challenge,
             gameBoard = board,
@@ -109,7 +110,8 @@ class GameScreenshotTest {
             gamePlaying = true,
             timeText = "07:42",
             mistakesCount = 1,
-            notesToggled = notesMode
+            notesToggled = notesMode,
+            remainingUsesList = (1..9).map { d -> 9 - board.flatten().count { it.value == d } }
         )
     }
 
@@ -151,8 +153,13 @@ class GameScreenshotTest {
     @Test
     fun lightNoHint() = shoot("light-no-hint", dark = false, state(filledCages = 6, selected = Cell(3, 4), notesMode = false, hints = false))
 
-    // a short 18:9 phone keeps the single row of keys under the board
+    // a short 18:9 phone
     @Test
     @Config(qualifiers = "w360dp-h720dp-xxhdpi")
     fun lightShortPhone() = shoot("light-short", dark = false, state(filledCages = 14, selected = Cell(5, 4), notesMode = false))
+
+    // a 411dp-wide phone with hints off and the remaining count on each key
+    @Test
+    @Config(qualifiers = "w411dp-h914dp-xxhdpi")
+    fun darkCounts() = shoot("dark-counts", dark = true, state(filledCages = 14, selected = Cell(5, 4), notesMode = false, hints = false, counts = true))
 }
