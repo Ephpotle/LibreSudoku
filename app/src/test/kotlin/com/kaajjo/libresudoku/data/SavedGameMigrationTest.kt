@@ -71,7 +71,8 @@ class SavedGameMigrationTest {
     @Test
     fun `a version 7 database opens with the current schema and keeps its games`() = runBlocking {
         val db = Room.databaseBuilder(context, AppDatabase::class.java, DATABASE_NAME)
-            .addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9)
+            .addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9,
+                AppDatabase.MIGRATION_9_10)
             .allowMainThreadQueries()
             .build()
             .also { database = it }
@@ -90,12 +91,14 @@ class SavedGameMigrationTest {
         assertNull(old.endReason)
         assertNull(old.appVersionCode)
         assertNull(old.felt)
+        assertNull(old.activeSeconds)
 
-        db.savedGameDao().update(old.copy(hintsUsed = 1, endReason = GameEndReason.GAVE_UP, felt = FeltDifficulty.HARDER))
+        db.savedGameDao().update(old.copy(hintsUsed = 1, endReason = GameEndReason.GAVE_UP, felt = FeltDifficulty.HARDER, activeSeconds = 25L))
         val updated = db.savedGameDao().get(7)!!
         assertEquals(1, updated.hintsUsed)
         assertEquals(GameEndReason.GAVE_UP, updated.endReason)
         assertEquals(FeltDifficulty.HARDER, updated.felt)
+        assertEquals(25L, updated.activeSeconds)
         assertEquals(30L, updated.timer.seconds)
     }
 

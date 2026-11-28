@@ -51,7 +51,17 @@ data class SavedGame(
     @ColumnInfo(name = "app_version_code") val appVersionCode: Int? = null,
     /** How hard the finished game felt to the player: see [FeltDifficulty]; NULL when not answered. */
     @ColumnInfo(name = "felt") val felt: String? = null,
+    /**
+     * Seconds of [timer] that came within [ACTIVE_WINDOW_MINUTES] minutes of the player's last input,
+     * so time with the phone put down is left out. NULL when unknown: the game was started before this column existed.
+     */
+    @ColumnInfo(name = "active_seconds") val activeSeconds: Long? = null,
 ) {
+    companion object {
+        /** Minutes without any input after which the timer still runs but active time stops counting. */
+        const val ACTIVE_WINDOW_MINUTES = 5
+    }
+
     /** True when the game is known to have been played without any aid, false when one was used, null when unknown. */
     val unassisted: Boolean?
         get() {
