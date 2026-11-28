@@ -49,11 +49,9 @@ import com.kaajjo.libresudoku.R
 import com.kaajjo.libresudoku.core.GITHUB_NEW_ISSUE
 import com.kaajjo.libresudoku.core.GITHUB_REPOSITORY
 import com.kaajjo.libresudoku.core.PreferencesConstants
-import com.kaajjo.libresudoku.core.TELEGRAM_CHANNEL
 import com.kaajjo.libresudoku.core.utils.GlobalExceptionHandler.Companion.getExceptionString
 import com.kaajjo.libresudoku.ui.components.ScrollbarLazyColumn
 import com.kaajjo.libresudoku.ui.theme.LibreSudokuTheme
-import com.kaajjo.libresudoku.ui.theme.icons.ExteraGram
 import com.materialkolor.PaletteStyle
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -175,14 +173,6 @@ class CrashActivity : ComponentActivity() {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                IconButton(onClick = {
-                                    uriHandler.openUri(TELEGRAM_CHANNEL)
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.ExteraGram,
-                                        contentDescription = null
-                                    )
-                                }
                                 IconButton(onClick = {
                                     uriHandler.openUri(GITHUB_REPOSITORY)
                                 }) {
